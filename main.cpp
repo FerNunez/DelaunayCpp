@@ -4,6 +4,7 @@
 #include <thread>
 
 #include "include/delaunay.h"
+#include "include/kruskal.h"
 #include "include/viewer.h"
 
 #define Now() std::chrono::steady_clock::now()
@@ -23,10 +24,13 @@ int main() {
   const Point2d b(640, 0);
   const Point2d c(320, 480);
   Subdivision S = Subdivision(a, b, c);
+  Kruskal k(&S);
   // Init viewer
   Viewer viewer(640, 480);
 
   bool update = false;
+  bool update_kruskal = false;
+
   bool quit = false;
   while (!quit) {
     auto start_time_point = Now();
@@ -47,29 +51,49 @@ int main() {
         switch (event.key.keysym.sym) {
 
           // add point
-        case SDLK_SPACE:
+        case SDLK_SPACE: {
           Point2d mouse_pos;
           SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
           S.InsertSite(mouse_pos);
           update = true;
           break;
         }
+        case SDLK_RETURN: {
+          update_kruskal = true;
+          break;
+        }
+        }
         break;
       }
     } // end of pull event while
 
-    if (update) {
-      update = false;
-      std::cout << "before: ";
-      printVectorEdgeLenght(S.edges_stack);
-      std::cout << "after: ";
-      printVectorEdgeLenght(S.edges_stack);
-    }
-    // clear and draw and sleep
+    // clear window
     viewer.clear();
 
-    viewer.drawAll(S.edges_stack);
+    // update and draw
+    if (update) {
+      update = false;
+      std::cout << "Edge size: " << S.edges_stack.size() << std::endl;
 
+      for (auto e : S.edges_stack) {
+        std::cout << "Edge node orig:" << e->node->data << std::endl;
+        std::cout << "Edge node orig ID:" << e->node->id << std::endl;
+
+        std::cout << "Edge node dest:" << e->Sym()->node->data << std::endl;
+        std::cout << "Edge node dest ID:" << e->Sym()->node->id << std::endl;
+        std::cout << "--" << std::endl;
+      }
+    }
+    // update kruskal
+    if (update_kruskal) {
+      update_kruskal = false;
+      k.update();
+      std::cout << "edge solution: " << k.retrieveSol().size() << std::endl;
+    }
+
+    viewer.drawAll(S.edges_stack, 0, 0, 255);
+
+    viewer.drawAll(k.retrieveSol(), 255, 0, 0);
     // present render
     viewer.render();
 

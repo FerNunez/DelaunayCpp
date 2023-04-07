@@ -12,14 +12,24 @@ bool myfunction(Edge *i, Edge *j) {
 
 class Kruskal {
 public:
-  Kruskal(Subdivision *S) {
-    subdivision = S;
-    // 0 is the starting number
-  };
+  Kruskal(Subdivision *S) { subdivision = S; };
   ~Kruskal() {}
 
+  int find_set(int i) {
+    // If i is the parent of itself
+    if (i == parent[i])
+      return i;
+    else
+      // Else if i is not the parent of itself
+      // Then i is not the representative of his set,
+      // so we recursively call Find on its parent
+      return find_set(parent[i]);
+  }
+
   void update() {
-    solution.resize(subdivision->node_stack.size() - 1);
+    parent.resize(subdivision->node_stack.size());
+    std::iota(std::begin(parent), std::end(parent),
+              0); // 0 is the starting number
 
     int stacked_nodes = 0;
     // generate unique IDsfor
@@ -32,22 +42,28 @@ public:
               myfunction);
 
     // loop all edges
-    int sol_idx = 0;
-    for (auto const e : subdivision->edges_stack) {
-      if (stacked_nodes >= subdivision->node_stack.size()) {
-        break;
-      }
+    int uRep, vRep;
+    for (int i = 0; i < subdivision->edges_stack.size(); i++) {
 
-      // stack first edge and 2 nodes
-      if (stacked_nodes == 0) {
-        solution[sol_idx] = e;
-        stacked_nodes = 2;
-        sol_idx++;
+      uRep = find_set(subdivision->edges_stack[i]->Org()->id);
+      vRep = find_set(subdivision->edges_stack[i]->Dest()->id);
+      if (uRep != vRep) {
+        solution.push_back(subdivision->edges_stack[i]); // add to tree
+        // union two different set of points
+        parent[uRep] = parent[vRep];
+
+        if (solution.size() == subdivision->node_stack.size() - 1) {
+          std::cout << "Im out?" << std::endl;
+          break;
+        }
       }
     }
   };
 
+  inline std::vector<Edge *> retrieveSol() { return solution; }
+
 private:
   Subdivision *subdivision;
   std::vector<Edge *> solution;
+  std::vector<int> parent;
 };

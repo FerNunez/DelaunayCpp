@@ -28,27 +28,27 @@ public:
     SDL_RenderClear(renderer);
   }
 
-  void drawEdge(const Edge &);
-  void drawAll(const std::vector<Edge *> vector_e);
+  void drawEdge(const Edge &, int, int, int);
+  void drawAll(const std::vector<Edge *> vector_e, int, int, int);
 
 private:
   SDL_Window *window;
   SDL_Renderer *renderer;
 };
 
-void Viewer::drawEdge(const Edge &e) {
-  SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+void Viewer::drawEdge(const Edge &e, int r, int g, int b) {
+  SDL_SetRenderDrawColor(renderer, r, g, b, 255);
 
   auto &origin = e.Org2d();
   auto &dest = e.Dest2d();
   SDL_RenderDrawLine(renderer, origin.x, origin.y, dest.x, dest.y);
 }
 
-void Viewer::drawAll(const std::vector<Edge *> vector_e) {
+void Viewer::drawAll(const std::vector<Edge *> vector_e, int r, int g, int b) {
 
   for (auto e : vector_e) {
 
     // std::cout << e->Qedge()->lenght_sqrt << std::endl;
-    drawEdge(*e);
+    drawEdge(*e, r, g, b);
   }
 }

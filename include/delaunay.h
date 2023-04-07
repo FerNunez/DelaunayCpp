@@ -74,19 +74,33 @@ int lenghtSquaredf(const Point2f &a, const Point2d &b) {
   auto v = a - b;
   return std::sqrt(v.x * v.x + v.y * v.y);
 }
+
+struct Node {
+
+  Node(const Point2d &d) { data = d; };
+  Point2d data;
+  int id;
+};
+
 class QuadEdge;
 
 class Edge {
   friend QuadEdge;
   friend void Splice(Edge *, Edge *);
 
-private:
-  int num;
-  Edge *next;
-  Point2d *data;
+  // private:
 
 public:
-  Edge() { data = 0; }
+  int num;
+  Edge *next;
+  //  Point2d
+  //      *data; // maybe add there Node Class where it says its location + its
+  //             // group id? or reference to its idx position in vector of
+  //             nodes
+  Node *node;
+
+public:
+  Edge() {}
   Edge *Rot();
   Edge *invRot();
   Edge *Sym();
@@ -98,12 +112,12 @@ public:
   Edge *Lprev();
   Edge *Rnext();
   Edge *Rprev();
-  Point2d *Org();
-  Point2d *Dest();
+  Node *Org();
+  Node *Dest();
   const Point2d &Org2d() const;
   const Point2d &Dest2d() const;
 
-  void EndPoints(Point2d *, Point2d *);
+  void EndPoints(Node *ori, Node *de);
   QuadEdge *Qedge() { return (QuadEdge *)(this - num); }
 };
 
@@ -200,18 +214,18 @@ inline Edge *Edge::Rprev()
 }
 
 /************** Access to data pointers *************************************/
-inline Point2d *Edge::Org() { return data; }
-inline Point2d *Edge::Dest() { return Sym()->data; }
-inline const Point2d &Edge::Org2d() const { return *data; }
+inline Node *Edge::Org() { return node; }
+inline Node *Edge::Dest() { return Sym()->node; }
+inline const Point2d &Edge::Org2d() const { return node->data; }
 inline const Point2d &Edge::Dest2d() const {
-  return (num < 2) ? *((this + 2)->data) : *((this - 2)->data);
+  return (num < 2) ? ((this + 2)->node->data) : ((this - 2)->node->data);
 }
 
-inline void Edge::EndPoints(Point2d *ori, Point2d *de) {
-  data = ori;
-  Sym()->data = de;
+inline void Edge::EndPoints(Node *ori, Node *de) {
+  node = ori;
+  Sym()->node = de;
 
-  this->Qedge()->lenght_sqrt = lenghtSquared(*ori, *de);
+  this->Qedge()->lenght_sqrt = lenghtSquared(ori->data, de->data);
 }
 
 /*********************** Basic Topological Operators ************************/
@@ -251,8 +265,8 @@ void DeleteEdge(Edge *e) {
 Subdivision::Subdivision(const Point2d &a, const Point2d &b, const Point2d &c)
 // Initialize a subdivision to the triangle defined by the points a, b, c.
 {
-  Point2d *da, *db, *dc;
-  da = new Point2d(a), db = new Point2d(b), dc = new Point2d(c);
+  Node *da, *db, *dc;
+  da = new Node(a), db = new Node(b), dc = new Node(c);
   Edge *ea = MakeEdge();
   ea->EndPoints(da, db);
   Edge *eb = MakeEdge();
@@ -268,8 +282,11 @@ Subdivision::Subdivision(const Point2d &a, const Point2d &b, const Point2d &c)
   edges_stack.push_back(eb); // TODO: REMOVE
   edges_stack.push_back(ec); // TODO: REMOVE
 
+  da->id = 0;
   node_stack.push_back(a);
+  db->id = 1;
   node_stack.push_back(b);
+  dc->id = 2;
   node_stack.push_back(c);
 }
 Edge *Connect(Edge *a, Edge *b)
@@ -282,7 +299,7 @@ Edge *Connect(Edge *a, Edge *b)
   Splice(e, a->Lnext());
   Splice(e->Sym(), b);
   e->EndPoints(a->Dest(), b->Org());
-  e->Qedge()->lenght_sqrt = lenghtSquared(*a->Dest(), *b->Org());
+  e->Qedge()->lenght_sqrt = lenghtSquared(a->Dest()->data, b->Org()->data);
   return e;
 }
 void Swap(Edge *e)
@@ -388,7 +405,9 @@ void Subdivision::InsertSite(const Point2d &x)
   // existing edge.)
 
   Edge *base = MakeEdge();
-  base->EndPoints(e->Org(), new Point2d(x));
+  Node *node = new Node(Point2d(x));
+  node->id = node_stack.size() - 1;
+  base->EndPoints(e->Org(), node);
   Splice(base, e);
   startingEdge = base;
   this->edges_stack.push_back(base); // TODO: REMOVE
