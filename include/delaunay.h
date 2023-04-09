@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <iostream>
 #include <math.h>
 #include <tuple>
@@ -234,6 +235,11 @@ Edge *MakeEdge() {
   return ql->e;
 }
 
+Edge *MakeEdgeFrom(Node *ori, Node *de) {
+  Edge *e = MakeEdge();
+  e->EndPoints(ori, de);
+  return e;
+}
 void Splice(Edge *a, Edge *b)
 // This operator affects the two edge rings around the origins of a and b,
 // and, independently, the two edge rings around the left faces of a and b.
@@ -432,3 +438,169 @@ void Subdivision::InsertSite(const Point2d &x)
   } while (true);
 }
 /*****************************************************************************/
+bool sortIncremXY(const Point2d &a, const Point2d &b) {
+  if (a.x == b.x)
+    return (a.y < b.y);
+  return a.x < b.x;
+}
+
+/*****************************************************************/
+
+class DivideConquer {
+  // private:
+public:
+  DivideConquer(std::vector<Point2d> &);
+
+  void delaunay(Edge *&left, Edge *&right, int left_idx, int right_idx);
+
+  std::vector<Edge *> edges_stack;
+  std::vector<Point2d> node_stack;
+
+private:
+  std::vector<Point2d> &input;
+};
+
+DivideConquer::DivideConquer(std::vector<Point2d> &v) : input(v) {
+  // Sort in X, then on Y only if X==Y
+  std::sort(v.begin(), v.end(), sortIncremXY);
+}
+
+// left: most left edge
+// right: most right edge
+void DivideConquer::delaunay(Edge *&o_left, Edge *&o_right, int left_idx,
+                             int right_idx) {
+  // starts calling
+  // delaunay(o_left, o_right, 0, point_size-1)
+  //
+  // only 2 points
+  auto numb_points = 1 + right_idx - left_idx;
+  if (numb_points == 2) {
+    Edge *e =
+        MakeEdgeFrom(new Node(input[left_idx]), new Node(input[right_idx]));
+
+    o_left = e;
+    o_right = e->Sym();
+
+    edges_stack.push_back(o_left);
+    edges_stack.push_back(o_right);
+    return;
+  }
+  // abc
+  else if (numb_points == 3) {
+    Edge *ab =
+        MakeEdgeFrom(new Node(input[left_idx]), new Node(input[left_idx + 1]));
+    Edge *bc =
+        MakeEdgeFrom(new Node(input[left_idx + 1]), new Node(input[right_idx]));
+    Splice(ab->Sym(), bc);
+
+    // c.y < b.y
+    if (ccw(input[left_idx], input[left_idx + 1], input[right_idx])) {
+      Edge *c = Connect(bc, ab);
+      o_left = ab;
+      o_right = bc->Sym();
+
+      edges_stack.push_back(c);
+
+    } else if (ccw(input[left_idx], input[right_idx], input[left_idx + 1])) {
+      Edge *c = Connect(bc, ab);
+      o_left = c->Sym();
+      o_right = c;
+
+      edges_stack.push_back(c);
+
+    }
+    // colinear
+    else {
+      o_left = ab;
+      o_right = bc->Sym();
+    }
+
+    edges_stack.push_back(ab);
+    edges_stack.push_back(bc);
+    return;
+  }
+  // more than 3 points => recursive
+  else {
+    int lenght_half = numb_points / 2;
+    Edge *leftleft;
+    Edge *leftright;
+    delaunay(leftleft, leftright, left_idx, left_idx + lenght_half - 1);
+
+    Edge *rightleft;
+    Edge *rightright;
+    delaunay(rightleft, rightright, left_idx + lenght_half, right_idx);
+
+    // Lower common tangets
+    do {
+      if (LeftOf(rightleft->Org2d(), leftright)) {
+        leftright = leftright->Lnext();
+      } else if (RightOf(leftright->Org2d(), rightleft)) {
+        rightleft = rightleft->Rprev();
+      } else {
+        break;
+      }
+    } while (true);
+
+    Edge *basel = Connect(rightleft->Sym(), leftright);
+    if (leftright->Org2d() == leftleft->Org2d()) {
+      leftleft = basel->Sym();
+    }
+    if (rightleft->Org2d() == rightright->Org2d()) {
+      rightright = basel;
+    }
+    edges_stack.push_back(basel);
+
+    // merge
+    do {
+      // Locate the first L point (lcand->Dest2d()) to be encountered by the
+      // rising bubble, and delete L edges out of base1->Dest2d() that fail the
+      // circle test.
+      Edge *lcand = basel->Sym()->Onext();
+      if (RightOf(lcand->Dest2d(), basel)) {
+        while (InCircle(basel->Dest2d(), basel->Org2d(), lcand->Dest2d(),
+                        lcand->Onext()->Dest2d())) {
+          Edge *t = lcand->Onext();
+          DeleteEdge(lcand);
+          lcand = t;
+        }
+      }
+
+      // Symmetrically, locate the first R point to be hit, and delete R edges
+      Edge *rcand = basel->Oprev();
+      if (RightOf(rcand->Dest2d(), basel)) {
+        while (InCircle(basel->Dest2d(), basel->Org2d(), rcand->Dest2d(),
+                        rcand->Oprev()->Dest2d())) {
+          Edge *t = rcand->Oprev();
+          DeleteEdge(rcand);
+          rcand = t;
+        }
+      }
+
+      // If both lcand and rcand are invalid, then basel is the upper common
+      // tangent
+      if (!RightOf(lcand->Dest2d(), basel) && !RightOf(rcand->Dest2d(), basel))
+        break;
+
+      // The next cross edge is to be connected to either lcand->Dest2d() or
+      // rcand->Dest2d() If both are valid, then choose the appropriate one
+      // using the InCircle test
+      if (!RightOf(lcand->Dest2d(), basel) ||
+          (RightOf(rcand->Dest2d(), basel) &&
+           InCircle(lcand->Dest2d(), lcand->Org2d(), rcand->Org2d(),
+                    rcand->Dest2d()))) {
+        // Add cross edge basel from rcand->Dest2d() to basel->Dest2d()
+        basel = Connect(rcand, basel->Sym());
+      } else {
+        // Add cross edge base1 from basel->Org() to lcand->->Dest2d()
+        basel = Connect(basel->Sym(), lcand->Sym());
+      }
+      edges_stack.push_back(basel);
+
+    } while (true);
+
+    o_left = leftleft;
+    o_right = rightright;
+
+    return;
+  }
+}
