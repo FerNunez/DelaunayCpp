@@ -17,10 +17,9 @@ public:
     edge_stack = S->edges_stack;
     num_node = S->node_stack.size();
   };
-  Kruskal(const std::vector<Edge *> &e_stack,
-          const std::vector<Point2d> &node_stack) {
+  Kruskal(const std::vector<Edge *> &e_stack, int num_nodes) {
     edge_stack = e_stack;
-    num_node = node_stack.size();
+    num_node = num_nodes;
   };
 
   ~Kruskal() {}

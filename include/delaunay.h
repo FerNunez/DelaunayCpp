@@ -456,6 +456,8 @@ public:
   std::vector<Edge *> edges_stack;
   std::vector<Point2d> node_stack;
 
+  int connected_nodes = 0;
+
 private:
   std::vector<Point2d> &input;
 };
@@ -475,8 +477,12 @@ void DivideConquer::delaunay(Edge *&o_left, Edge *&o_right, int left_idx,
   // only 2 points
   auto numb_points = 1 + right_idx - left_idx;
   if (numb_points == 2) {
-    Edge *e =
-        MakeEdgeFrom(new Node(input[left_idx]), new Node(input[right_idx]));
+    Node *a = new Node(input[left_idx]);
+    a->id = connected_nodes++;
+    Node *b = new Node(input[right_idx]);
+    b->id = connected_nodes++;
+
+    Edge *e = MakeEdgeFrom(a, b);
 
     o_left = e;
     o_right = e->Sym();
@@ -487,10 +493,16 @@ void DivideConquer::delaunay(Edge *&o_left, Edge *&o_right, int left_idx,
   }
   // abc
   else if (numb_points == 3) {
-    Edge *ab =
-        MakeEdgeFrom(new Node(input[left_idx]), new Node(input[left_idx + 1]));
-    Edge *bc =
-        MakeEdgeFrom(new Node(input[left_idx + 1]), new Node(input[right_idx]));
+
+    Node *a = new Node(input[left_idx]);
+    a->id = connected_nodes++;
+    Node *b = new Node(input[left_idx + 1]);
+    b->id = connected_nodes++;
+    Node *c = new Node(input[right_idx]);
+    c->id = connected_nodes++;
+
+    Edge *ab = MakeEdgeFrom(a, b);
+    Edge *bc = MakeEdgeFrom(b, c);
     Splice(ab->Sym(), bc);
 
     // c.y < b.y

@@ -41,7 +41,7 @@ int main() {
   Edge *oright;
   DC.delaunay(oleft, oright, 0, test.size() - 1);
 
-  Kruskal k(DC.edges_stack, DC.node_stack);
+  Kruskal k(DC.edges_stack, DC.connected_nodes);
 
   std::cout << "oleft.node.data " << oleft->node->data << std::endl;
 
@@ -115,7 +115,6 @@ int main() {
     if (update_kruskal) {
       update_kruskal = false;
       k.update();
-      std::cout << "edge solution: " << k.retrieveSol().size() << std::endl;
     }
 
     // incremental
