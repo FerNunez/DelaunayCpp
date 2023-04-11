@@ -17,17 +17,18 @@
 const int FRAME_RATE = 60;
 const int FRAME_DELAY = 1000 / FRAME_RATE;
 
-std::vector<Point2d> generateRandomPoints(int num_points, int radius_x,
-                                          int radius_y, Point2d offset) {
-  std::vector<Point2d> points;
+std::vector<Point2f> generateRandomPoints(int num_points, int radius_x,
+                                          int radius_y, Point2f offset) {
+  std::vector<Point2f> points;
   points.reserve(num_points);
 
   std::random_device rd;
 
   auto rndd = rd();
   std::cout << "rndd: " << rndd << std::endl;
-  //  std::mt19937 gen(rndd);
-  std::mt19937 gen(3489932919);
+  std::mt19937 gen(rndd);
+  //  std::mt19937 gen(2314271317); // 2314271317 - 50mil
+  //  std::mt19937 gen(3489932919);
   std::uniform_real_distribution<float> dis_x(-radius_x, radius_x);
   std::uniform_real_distribution<float> dis_y(-radius_y, radius_y);
 
@@ -48,27 +49,9 @@ void printVectorEdgeLenght(std::vector<Edge *> v) {
 
 int main() {
 
-  // test
-  const Point2d ta(0, 0);
-  const Point2d tb(200, 200);
-  const Point2d tc(100, 250);
-  const Point2d td(150, 400);
-  const Point2d te(300, 300);
-  const Point2d tf(400, 410);
-
-  std::vector<Point2d> test;
-  test.push_back(ta);
-  test.push_back(tb);
-  test.push_back(tc);
-  test.push_back(td);
-  test.push_back(te);
-  test.push_back(tf);
-
-  std::vector<Point2d> rng =
+  std::vector<Point2f> rng =
       generateRandomPoints(50000, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
-                           Point2d(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2));
-  //  rng.push_back(rng.back());
-  //  rng[rng.size() - 1] = rng[rng.size() - 2];
+                           Point2f(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2));
 
   DivideConquer DC(rng);
   Edge *oleft;
@@ -76,11 +59,25 @@ int main() {
   auto t = Now();
   DC.delaunay(oleft, oright, 0, rng.size() - 1);
 
-  std::cout << "Time Delaunay: "
+  auto delaunay_dt =
+      std::chrono::duration_cast<std::chrono::milliseconds>(Now() - t).count();
+
+  auto kt = Now();
+
+  Kruskal k(DC.edges_stack, DC.connected_nodes);
+  k.computeSolution();
+  std::cout << k.retrieveMinD() << std::endl;
+
+  auto kruskal_dt =
+      std::chrono::duration_cast<std::chrono::milliseconds>(Now() - kt).count();
+
+  std::cout << "Time Delaunay: " << delaunay_dt << "ms" << std::endl;
+  std::cout << "Time Kruskal: " << kruskal_dt << "ms" << std::endl;
+
+  std::cout << "Time TOTAL: "
             << std::chrono::duration_cast<std::chrono::milliseconds>(Now() - t)
                    .count()
             << "ms" << std::endl;
-  Kruskal k(DC.edges_stack, DC.connected_nodes);
 
   Viewer viewer(WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -132,37 +129,17 @@ int main() {
     // clear window
     viewer.clear();
 
-    //    // update and draw
-    //    if (update) {
-    //      update = false;
-    //      std::cout << "Edge size: " << S.edges_stack.size() << std::endl;
-
-    //      for (auto e : S.edges_stack) {
-    //        std::cout << "Edge node orig:" << e->node->data << std::endl;
-    //        std::cout << "Edge node orig ID:" << e->node->id << std::endl;
-
-    //        std::cout << "Edge node dest:" << e->Sym()->node->data <<
-    //        std::endl; std::cout << "Edge node dest ID:" << e->Sym()->node->id
-    //        << std::endl; std::cout << "--" << std::endl;
-    //      }
-    //    }
-    //    // update kruskal
-
     if (update_kruskal) {
 
       update_kruskal = false;
       auto t = Now();
-      k.update();
+      k.computeSolution();
       std::cout << "Time Kruskal: "
                 << std::chrono::duration_cast<std::chrono::milliseconds>(Now() -
                                                                          t)
                        .count()
                 << "ms" << std::endl;
     }
-
-    // incremental
-    //    viewer.drawAll(S.edges_stack, 0, 0, 255);
-    //    viewer.drawAll(k.retrieveSol(), 255, 0, 0);
 
     //    Conquer divie
     if (draw_base) {
@@ -171,7 +148,7 @@ int main() {
 
     viewer.drawAll(k.retrieveSol(), 255, 0, 0);
 
-    viewer.drawVertex(rng, 0, 0x99, 0, 3);
+    viewer.drawVertex(rng, 0, 0x70, 0, 3);
     // present render
     viewer.render();
 
