@@ -37,7 +37,8 @@ Point2d operator-(const Point2d &L, const Point2d &R) {
 
 int lenghtSquared(const Point2d &a, const Point2d &b) {
   auto v = a - b;
-  return std::sqrt(v.x * v.x + v.y * v.y);
+  //  return std::sqrt(v.x * v.x + v.y * v.y);
+  return v.x * v.x + v.y * v.y;
 }
 
 struct Point2f {
@@ -265,7 +266,7 @@ void Splice(Edge *a, Edge *b)
 void DeleteEdge(Edge *e) {
   Splice(e, e->Oprev());
   Splice(e->Sym(), e->Sym()->Oprev());
-  delete e->Qedge();
+  // delete e->Qedge();
 }
 /************* Topological Operations for Delaunay Diagrams *****************/
 Subdivision::Subdivision(const Point2d &a, const Point2d &b, const Point2d &c)
@@ -306,6 +307,7 @@ Edge *Connect(Edge *a, Edge *b)
   Splice(e->Sym(), b);
   e->EndPoints(a->Dest(), b->Org());
   e->Qedge()->lenght_sqrt = lenghtSquared(a->Dest()->data, b->Org()->data);
+
   return e;
 }
 void Swap(Edge *e)
@@ -454,19 +456,36 @@ public:
   void delaunay(Edge *&left, Edge *&right, int left_idx, int right_idx);
 
   std::vector<Edge *> edges_stack;
-  std::vector<Point2d> node_stack;
 
   int connected_nodes = 0;
 
 private:
-  std::vector<Point2d> &input;
+  std::vector<Point2d> input;
 };
 
-DivideConquer::DivideConquer(std::vector<Point2d> &v) : input(v) {
+DivideConquer::DivideConquer(std::vector<Point2d> &v) {
   // Sort in X, then on Y only if X==Y
   std::sort(v.begin(), v.end(), sortIncremXY);
-}
 
+  // remove repeated: all equals? -> O(n), all diff -> O(2*n) = O(n)
+  for (int i(0); i < v.size(); i++) {
+
+    const Point2d &p = v[i];
+    input.push_back(p);
+
+    for (int j(i + 1); j < v.size(); j++) {
+      const Point2d &q = v[j];
+      // not same
+      if (abs(q.x - p.x) > EPS || abs(q.y - p.y) > EPS) {
+        break;
+      }
+      // found similar: skip!
+      i++;
+    }
+  }
+  v.clear();
+  v = input;
+}
 // left: most left edge
 // right: most right edge
 void DivideConquer::delaunay(Edge *&o_left, Edge *&o_right, int left_idx,
@@ -487,8 +506,7 @@ void DivideConquer::delaunay(Edge *&o_left, Edge *&o_right, int left_idx,
     o_left = e;
     o_right = e->Sym();
 
-    edges_stack.push_back(o_left);
-    edges_stack.push_back(o_right);
+    edges_stack.push_back(e);
     return;
   }
   // abc
@@ -572,6 +590,8 @@ void DivideConquer::delaunay(Edge *&o_left, Edge *&o_right, int left_idx,
         while (InCircle(basel->Dest2d(), basel->Org2d(), lcand->Dest2d(),
                         lcand->Onext()->Dest2d())) {
           Edge *t = lcand->Onext();
+          lcand->Qedge()->lenght_sqrt = 10000;
+
           DeleteEdge(lcand);
           lcand = t;
         }
@@ -583,6 +603,7 @@ void DivideConquer::delaunay(Edge *&o_left, Edge *&o_right, int left_idx,
         while (InCircle(basel->Dest2d(), basel->Org2d(), rcand->Dest2d(),
                         rcand->Oprev()->Dest2d())) {
           Edge *t = rcand->Oprev();
+          rcand->Qedge()->lenght_sqrt = 10000;
           DeleteEdge(rcand);
           rcand = t;
         }

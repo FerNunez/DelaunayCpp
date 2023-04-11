@@ -47,10 +47,20 @@ public:
     std::iota(std::begin(group_id), std::end(group_id), 0);
 
     // sort stack
+
+    //    for (int i(0); i < edge_stack.size(); i++) {
+    //      std::cout << "i:" << i << std::endl;
+    //      auto edge = edge_stack[i];
+    //      std::cout << "edge->Org2d():" << edge->Org2d() << std::endl;
+    //      std::cout << "edge->Dest2d(): " << edge->Dest2d() << std::endl;
+    //      auto asd = edge->Qedge();
+    //      std::cout << "print: " << asd->lenght_sqrt << std::endl;
+    //    }
     std::sort(edge_stack.begin(), edge_stack.end(), myfunction);
 
     // loop all edges
     int uRep, vRep;
+    int min_d = 0;
     for (int i = 0; i < edge_stack.size(); i++) {
 
       uRep = find_set(edge_stack[i]->Org()->id);
@@ -60,12 +70,22 @@ public:
         // union two different set of points
         parent[uRep] = parent[vRep];
 
+        if (edge_stack[i]->Qedge()->lenght_sqrt > min_d) {
+          min_d = edge_stack[i]->Qedge()->lenght_sqrt;
+          std::cout << "min_d: " << min_d << std::endl;
+        }
         if (solution.size() == num_node - 1) {
           std::cout << "Im out?" << std::endl;
           break;
         }
       }
     }
+
+    std::cout << "min_d: " << min_d << std::endl;
+
+    min_d = std::sqrt(min_d);
+    std::cout << "min_d: " << min_d << std::endl;
+    std::cout << "std::sqrt(min_d): " << std::sqrt(min_d) << std::endl;
   };
 
   inline std::vector<Edge *> retrieveSol() { return solution; }
