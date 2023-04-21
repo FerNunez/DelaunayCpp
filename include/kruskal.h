@@ -9,7 +9,11 @@
 class Kruskal {
 public:
   Kruskal(const std::vector<Edge *> &e_stack, int num_nodes)
-      : edge_stack(e_stack), num_node(num_nodes), min_d(){};
+      : edge_stack(e_stack), num_node(num_nodes), min_d() {
+    // generate unique sets for each node
+    parent.resize(num_node);
+    std::iota(std::begin(parent), std::end(parent), 0);
+  };
 
   void computeSolution();
   inline std::vector<Edge *> &retrieveSol() { return solution; }
