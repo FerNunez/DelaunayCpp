@@ -45,6 +45,7 @@ struct Point2f {
 Point2f operator-(const Point2f &L, const Point2f &R) {
   return Point2f(L) -= R;
 }
+
 float lenghtSquared(const Point2f &a, const Point2f &b) {
   auto v = a - b;
   return v.x * v.x + v.y * v.y;
@@ -52,6 +53,7 @@ float lenghtSquared(const Point2f &a, const Point2f &b) {
 /************************** Helper end ************************/
 
 // ************************* Delaunay Triangulation ******************
+
 struct Node {
 
   Node(){};
@@ -63,21 +65,20 @@ struct Node {
 class QuadEdge;
 
 class Edge {
-  friend void Splice(Edge *, Edge *);
 
 public:
-  int num;
+  int index; // its index of edge in quad-edge
   Edge *next;
   Node node;
 
 public:
   Edge() {}
   // Return the dual of the current edge, directed from its right to its left.
-  inline Edge *Rot() { return (num < 3) ? this + 1 : this - 3; }
+  inline Edge *Rot() { return (index < 3) ? this + 1 : this - 3; }
   // Return the dual of the current edge, directed from its left to its right.
-  inline Edge *invRot() { return (num > 0) ? this - 1 : this + 3; }
+  inline Edge *invRot() { return (index > 0) ? this - 1 : this + 3; }
   // Return the edge from the destination to the origin of the current edge.
-  inline Edge *Sym() { return (num < 2) ? this + 2 : this - 2; }
+  inline Edge *Sym() { return (index < 2) ? this + 2 : this - 2; }
   // Return the next ccw edge around (from) the origin of the current edge.
   inline Edge *Onext() { return next; }
   // Return the next cw edge around (from) the origin of the current edge.
@@ -98,11 +99,13 @@ public:
   inline Node Dest() { return Sym()->node; }
   const Point2f &Org2d() const { return node.data; }
   const Point2f &Dest2d() const {
-    return (num < 2) ? ((this + 2)->node.data) : ((this - 2)->node.data);
+    return (index < 2) ? ((this + 2)->node.data) : ((this - 2)->node.data);
   }
 
   void EndPoints(Node ori, Node de);
-  QuadEdge *Qedge() { return (QuadEdge *)(this - num); }
+
+  // to remove
+  QuadEdge *Qedge() { return (QuadEdge *)(this - index); }
 };
 
 class QuadEdge {
@@ -116,10 +119,19 @@ public:
 };
 
 inline QuadEdge::QuadEdge() : alive(true) {
-  e[0].num = 0, e[1].num = 1, e[2].num = 2, e[3].num = 3;
+
+  // Set index
+  e[0].index = 0; // Normal edge
+  e[1].index = 1; // Face edge
+  e[2].index = 2; // Normal edge
+  e[3].index = 3; // Face edge
+
+  // Normal edge pointing to themself
   e[0].next = &(e[0]);
-  e[1].next = &(e[3]);
   e[2].next = &(e[2]);
+
+  // Face edge pointing eachother
+  e[1].next = &(e[3]);
   e[3].next = &(e[1]);
 }
 
