@@ -12,9 +12,10 @@ set(SOURCES
 # Add the include files
 set(INCLUDES
   include/delaunay.h
+  include/delaunay.cpp
   include/viewer.h
   include/kruskal.h
-
+  include/kruskal.cpp
 )
 
 # Add the executable
