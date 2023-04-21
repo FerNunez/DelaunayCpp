@@ -7,6 +7,7 @@
 
 #define EPS 0.0001
 
+/************************** Helper functions *******************/
 struct Point2d {
   int x;
   int y;
@@ -48,10 +49,12 @@ float lenghtSquared(const Point2f &a, const Point2f &b) {
   auto v = a - b;
   return v.x * v.x + v.y * v.y;
 }
+/************************** Helper end ************************/
 
 // ************************* Delaunay Triangulation ******************
 struct Node {
 
+  Node(){};
   Node(const Point2f &d) : data(d), id(-1){};
   Point2f data;
   int id;
@@ -60,13 +63,12 @@ struct Node {
 class QuadEdge;
 
 class Edge {
-  friend QuadEdge;
   friend void Splice(Edge *, Edge *);
 
 public:
   int num;
   Edge *next;
-  Node *node;
+  Node node;
 
 public:
   Edge() {}
@@ -92,14 +94,14 @@ public:
   inline Edge *Rnext() { return Rot()->Onext()->invRot(); }
   // Return the edge around the right face ccw before the current edge.
   inline Edge *Rprev() { return Sym()->Onext(); }
-  inline Node *Org() { return node; }
-  inline Node *Dest() { return Sym()->node; }
-  const Point2f &Org2d() const { return node->data; }
+  inline Node Org() { return node; }
+  inline Node Dest() { return Sym()->node; }
+  const Point2f &Org2d() const { return node.data; }
   const Point2f &Dest2d() const {
-    return (num < 2) ? ((this + 2)->node->data) : ((this - 2)->node->data);
+    return (num < 2) ? ((this + 2)->node.data) : ((this - 2)->node.data);
   }
 
-  void EndPoints(Node *ori, Node *de);
+  void EndPoints(Node ori, Node de);
   QuadEdge *Qedge() { return (QuadEdge *)(this - num); }
 };
 
@@ -121,11 +123,11 @@ inline QuadEdge::QuadEdge() : alive(true) {
   e[3].next = &(e[1]);
 }
 
-inline void Edge::EndPoints(Node *ori, Node *de) {
+inline void Edge::EndPoints(Node ori, Node de) {
   node = ori;
   Sym()->node = de;
 
-  this->Qedge()->lenght_sqrt = lenghtSquared(ori->data, de->data);
+  this->Qedge()->lenght_sqrt = lenghtSquared(ori.data, de.data);
 }
 
 /*********************** Basic Topological Operators ************************/
@@ -134,7 +136,7 @@ Edge *MakeEdge() {
   return ql->e;
 }
 
-Edge *MakeEdgeFrom(Node *ori, Node *de) {
+Edge *MakeEdgeFrom(Node ori, Node de) {
   Edge *e = MakeEdge();
   e->EndPoints(ori, de);
   return e;
@@ -178,7 +180,7 @@ Edge *Connect(Edge *a, Edge *b)
   Splice(e, a->Lnext());
   Splice(e->Sym(), b);
   e->EndPoints(a->Dest(), b->Org());
-  e->Qedge()->lenght_sqrt = lenghtSquared(a->Dest()->data, b->Org()->data);
+  e->Qedge()->lenght_sqrt = lenghtSquared(a->Dest().data, b->Org().data);
 
   return e;
 }
@@ -288,10 +290,10 @@ void DivideConquer::delaunay(Edge *&o_left, Edge *&o_right, int left_idx,
   // only 2 points
   auto numb_points = 1 + right_idx - left_idx;
   if (numb_points == 2) {
-    Node *a = new Node(input[left_idx]);
-    a->id = connected_nodes++;
-    Node *b = new Node(input[right_idx]);
-    b->id = connected_nodes++;
+    Node a(input[left_idx]);
+    a.id = connected_nodes++;
+    Node b(input[right_idx]);
+    b.id = connected_nodes++;
 
     Edge *e = MakeEdgeFrom(a, b);
 
@@ -304,12 +306,12 @@ void DivideConquer::delaunay(Edge *&o_left, Edge *&o_right, int left_idx,
   // abc
   else if (numb_points == 3) {
 
-    Node *a = new Node(input[left_idx]);
-    a->id = connected_nodes++;
-    Node *b = new Node(input[left_idx + 1]);
-    b->id = connected_nodes++;
-    Node *c = new Node(input[right_idx]);
-    c->id = connected_nodes++;
+    Node a(input[left_idx]);
+    a.id = connected_nodes++;
+    Node b(input[left_idx + 1]);
+    b.id = connected_nodes++;
+    Node c(input[right_idx]);
+    c.id = connected_nodes++;
 
     Edge *ab = MakeEdgeFrom(a, b);
     Edge *bc = MakeEdgeFrom(b, c);

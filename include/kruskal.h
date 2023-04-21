@@ -65,8 +65,8 @@ void Kruskal::computeSolution() {
     if (!edge_stack[i]->Qedge()->alive) {
       continue;
     }
-    uRep = find_set(edge_stack[i]->Org()->id);
-    vRep = find_set(edge_stack[i]->Dest()->id);
+    uRep = find_set(edge_stack[i]->Org().id);
+    vRep = find_set(edge_stack[i]->Dest().id);
     if (uRep != vRep) {
       solution.push_back(edge_stack[i]); // add to tree
       // union two different set of points
