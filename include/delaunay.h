@@ -141,12 +141,15 @@ public:
   DivideConquer(std::vector<Point2f> &);
   ~DivideConquer();
 
-  void delaunay(Edge *&left, Edge *&right, int left_idx, int right_idx);
+  void computeTriangulation();
 
   std::vector<Edge *> edges_stack;
 
   int connected_nodes = 0;
 
 private:
-  std::vector<Point2f> input;
+  // Computes recursive Delaunay Triang
+  void delaunay(Edge *&left, Edge *&right, int left_idx, int right_idx);
+
+  std::vector<Point2f> m_points;
 };

@@ -53,11 +53,13 @@ int main() {
       generateRandomPoints(50000, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
                            Point2f(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2));
 
-  DivideConquer DC(rng);
-  Edge *oleft;
-  Edge *oright;
   auto t = Now();
-  DC.delaunay(oleft, oright, 0, rng.size() - 1);
+
+  DivideConquer DC(rng);
+  //  Edge *oleft;
+  //  Edge *oright;
+  //  DC.delaunay(oleft, oright, 0, rng.size() - 1);
+  DC.computeTriangulation();
 
   auto delaunay_dt =
       std::chrono::duration_cast<std::chrono::milliseconds>(Now() - t).count();

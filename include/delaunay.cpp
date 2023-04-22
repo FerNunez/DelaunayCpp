@@ -116,18 +116,20 @@ int LeftOf(const Point2f &x, Edge *e) {
 }
 
 DivideConquer::DivideConquer(std::vector<Point2f> &v) {
-  // Sort in X, then on Y only if X==Y
+
+  // Sort points front left-to-right, then up-down only if X==Y
   std::sort(v.begin(), v.end(), [](const Point2f &a, const Point2f &b) {
     if (a.x == b.x)
       return (a.y < b.y);
     return a.x < b.x;
   });
 
-  // remove repeated: all equals? -> O(n), all diff -> O(2*n) = O(n)
+  // remove repeated:
+  // worst: all equals? -> O(n), all diff -> O(2*n) = O(n)
   for (int i(0); i < v.size(); i++) {
 
     const Point2f &p = v[i];
-    input.push_back(p);
+    m_points.push_back(p);
 
     for (int j(i + 1); j < v.size(); j++) {
       const Point2f &q = v[j];
@@ -139,8 +141,9 @@ DivideConquer::DivideConquer(std::vector<Point2f> &v) {
       i++;
     }
   }
+  // to fix?
   v.clear();
-  v = input;
+  v = m_points;
 }
 
 DivideConquer::~DivideConquer() {
@@ -159,9 +162,9 @@ void DivideConquer::delaunay(Edge *&o_left, Edge *&o_right, int left_idx,
   // only 2 points
   auto numb_points = 1 + right_idx - left_idx;
   if (numb_points == 2) {
-    Node a(input[left_idx]);
+    Node a(m_points[left_idx]);
     a.id = connected_nodes++;
-    Node b(input[right_idx]);
+    Node b(m_points[right_idx]);
     b.id = connected_nodes++;
 
     Edge *e = MakeEdgeFrom(a, b);
@@ -175,11 +178,11 @@ void DivideConquer::delaunay(Edge *&o_left, Edge *&o_right, int left_idx,
   // abc
   else if (numb_points == 3) {
 
-    Node a(input[left_idx]);
+    Node a(m_points[left_idx]);
     a.id = connected_nodes++;
-    Node b(input[left_idx + 1]);
+    Node b(m_points[left_idx + 1]);
     b.id = connected_nodes++;
-    Node c(input[right_idx]);
+    Node c(m_points[right_idx]);
     c.id = connected_nodes++;
 
     Edge *ab = MakeEdgeFrom(a, b);
@@ -187,14 +190,15 @@ void DivideConquer::delaunay(Edge *&o_left, Edge *&o_right, int left_idx,
     Splice(ab->Sym(), bc);
 
     // c.y < b.y
-    if (ccw(input[left_idx], input[left_idx + 1], input[right_idx])) {
+    if (ccw(m_points[left_idx], m_points[left_idx + 1], m_points[right_idx])) {
       Edge *c = Connect(bc, ab);
       o_left = ab;
       o_right = bc->Sym();
 
       edges_stack.push_back(c);
 
-    } else if (ccw(input[left_idx], input[right_idx], input[left_idx + 1])) {
+    } else if (ccw(m_points[left_idx], m_points[right_idx],
+                   m_points[left_idx + 1])) {
       Edge *c = Connect(bc, ab);
       o_left = c->Sym();
       o_right = c;
@@ -296,4 +300,11 @@ void DivideConquer::delaunay(Edge *&o_left, Edge *&o_right, int left_idx,
 
     return;
   }
+}
+
+void DivideConquer::computeTriangulation() {
+  Edge *oleft;
+  Edge *oright;
+  delaunay(oleft, oright, 0, m_points.size() - 1);
+  return;
 }
