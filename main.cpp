@@ -42,7 +42,7 @@ std::vector<Point2f> generateRandomPoints(int num_points, int radius_x,
 
 void printVectorEdgeLenght(std::vector<Edge *> v) {
   for (auto e : v) {
-    std::cout << e->Qedge()->lenght_sqrt << ", ";
+    std::cout << e->Qedge()->lenght << ", ";
   }
   std::cout << " - " << std::endl;
 }

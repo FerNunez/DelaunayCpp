@@ -54,22 +54,27 @@ inline float lenghtSquared(const Point2f &a, const Point2f &b) {
 
 // ************************* Delaunay Triangulation ******************
 
+/*!
+ * \brief The Node class containing position and id
+ */
 struct Node {
 
   Node(){};
-  Node(const Point2f &d) : data(d), id(-1){};
-  Point2f data;
+  Node(const Point2f &d) : pos(d), id(-1){};
+
+  Point2f pos; // node's position
   int id;
 };
 
+// forward declaration of QuadEdges
 class QuadEdge;
 
 class Edge {
 
 public:
-  int index; // its index of edge in quad-edge
-  Edge *next;
-  Node node;
+  int index;  // its index of edge inside a quad-edge
+  Edge *next; // points to next edge
+  Node node;  // node of origin for each edge
 
 public:
   Edge() {}
@@ -97,9 +102,9 @@ public:
   inline Edge *Rprev() { return Sym()->Onext(); }
   inline Node Org() { return node; }
   inline Node Dest() { return Sym()->node; }
-  const Point2f &Org2d() const { return node.data; }
+  const Point2f &Org2d() const { return node.pos; }
   const Point2f &Dest2d() const {
-    return (index < 2) ? ((this + 2)->node.data) : ((this - 2)->node.data);
+    return (index < 2) ? ((this + 2)->node.pos) : ((this - 2)->node.pos);
   }
 
   void EndPoints(Node ori, Node de);
@@ -108,26 +113,28 @@ public:
   QuadEdge *Qedge() { return (QuadEdge *)(this - index); }
 };
 
+/*!
+ * \brief The QuadEdge class has 4 representation of an 'edge'
+ */
 class QuadEdge {
-
 public:
   QuadEdge();
 
-  Edge e[4];
-  float lenght_sqrt;
-  bool alive;
+  Edge e[4];    // array containing 2 normal and 2 faces edges
+  float lenght; // lenght squared
+  bool alive;   // edge is 'removed'
 };
 
-/*************** Geometric Predicates for Delaunay Diagrams *****************/
-inline float computeArea(const Point2f &a, const Point2f &b, const Point2f &c)
-// Returns twice the area of the oriented triangle (a, b, c), i.e., the
-// area is positive if the triangle is oriented counterclockwise.
-{
+// Returns twice the area of the oriented triangle (a, b, c)
+inline float computeArea(const Point2f &a, const Point2f &b, const Point2f &c) {
   return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 
 /*********************** DivideConquer *************************************/
 
+/*!
+ * \brief The DivideConquer class applies Delaunay Triangulation Divide&Conquer
+ */
 class DivideConquer {
   // private:
 public:

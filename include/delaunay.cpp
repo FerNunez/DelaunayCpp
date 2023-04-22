@@ -22,7 +22,7 @@ void Edge::EndPoints(Node ori, Node de) {
   node = ori;
   Sym()->node = de;
 
-  this->Qedge()->lenght_sqrt = lenghtSquared(ori.data, de.data);
+  this->Qedge()->lenght = lenghtSquared(ori.pos, de.pos);
 }
 
 /*********************** Basic Topological Operators ************************/
@@ -75,7 +75,7 @@ Edge *Connect(Edge *a, Edge *b)
   Splice(e, a->Lnext());
   Splice(e->Sym(), b);
   e->EndPoints(a->Dest(), b->Org());
-  e->Qedge()->lenght_sqrt = lenghtSquared(a->Dest().data, b->Org().data);
+  e->Qedge()->lenght = lenghtSquared(a->Dest().pos, b->Org().pos);
 
   return e;
 }

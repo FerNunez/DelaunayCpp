@@ -12,7 +12,7 @@ void Kruskal::computeSolution() {
 
   // sort increasing by lenght
   std::sort(edge_stack.begin(), edge_stack.end(), [](Edge *i, Edge *j) {
-    return (i->Qedge()->lenght_sqrt < j->Qedge()->lenght_sqrt);
+    return (i->Qedge()->lenght < j->Qedge()->lenght);
   });
 
   // loop all edges
@@ -35,8 +35,8 @@ void Kruskal::computeSolution() {
       parent[node_orig_set] = parent[node_dest_set];
 
       // take minimym distance
-      if (edge_stack[i]->Qedge()->lenght_sqrt > min_d) {
-        min_d = edge_stack[i]->Qedge()->lenght_sqrt;
+      if (edge_stack[i]->Qedge()->lenght > min_d) {
+        min_d = edge_stack[i]->Qedge()->lenght;
       }
 
       if (solution.size() == num_node - 1) {
