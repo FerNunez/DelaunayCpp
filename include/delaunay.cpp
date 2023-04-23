@@ -1,7 +1,7 @@
 #include "delaunay.h"
 
 /************ Data Structure *************/
-QuadEdge::QuadEdge() : alive(true) {
+QuadEdge::QuadEdge() : alive(true), lenght(0.0) {
 
   // Set index
   e[0].index = 0; // Normal edge
@@ -77,7 +77,7 @@ void Splice(Edge *a, Edge *b) {
   alpha->next = t3;
   beta->next = t4;
 }
-void DivideConquer::deleteEdge(Edge *e) {
+void DivideConquer::disconnectEdge(Edge *e) {
   Splice(e, e->Oprev());
   Splice(e->Sym(), e->Sym()->Oprev());
 
@@ -198,7 +198,7 @@ void DivideConquer::recursiveDelaunay(Edge *&o_left, Edge *&o_right,
         while (insideCircle(lcand->Onext()->Dest2d(), basel->Dest2d(),
                             basel->Org2d(), lcand->Dest2d())) {
           Edge *t = lcand->Onext();
-          deleteEdge(lcand);
+          disconnectEdge(lcand);
           lcand = t;
         }
       }
@@ -209,7 +209,7 @@ void DivideConquer::recursiveDelaunay(Edge *&o_left, Edge *&o_right,
         while (insideCircle(rcand->Oprev()->Dest2d(), basel->Dest2d(),
                             basel->Org2d(), rcand->Dest2d())) {
           Edge *t = rcand->Oprev();
-          deleteEdge(rcand);
+          disconnectEdge(rcand);
           rcand = t;
         }
       }
@@ -248,7 +248,7 @@ void DivideConquer::computeTriangulation(std::vector<Point2f> &a_stars_system) {
   std::sort(a_stars_system.begin(), a_stars_system.end(),
             [](const Point2f &a, const Point2f &b) {
               if (a.x == b.x)
-                return (a.y < b.y);
+                return (a.y > b.y);
               return a.x < b.x;
             });
 
@@ -263,7 +263,7 @@ void DivideConquer::computeTriangulation(std::vector<Point2f> &a_stars_system) {
     for (int j(i + 1); j < a_stars_system.size(); j++) {
       const Point2f &q = a_stars_system[j];
       // not same
-      if (abs(q.x - p.x) != 0 || abs(q.y - p.y) != 0) {
+      if (fabsf(q.x - p.x) != 0 || fabsf(q.y - p.y) != 0) {
         break;
       }
       // found similar: skip!
@@ -328,7 +328,7 @@ float DivideConquer::computeKruskalMinD(std::vector<Edge *> &a_solution) {
     if (node_orig_set != node_dest_set) {
       a_solution.push_back(valid_edges[i]);
 
-      // union two different set of points
+      // union two diffeHelperrent set of points
       cluster_id[node_orig_set] = cluster_id[node_dest_set];
 
       // take minimum distance

@@ -1,13 +1,10 @@
 #pragma once
 #include <algorithm>
-#include <iostream>
-#include <math.h>
+#include <cmath>
 #include <memory>
 #include <numeric>
-#include <tuple>
 #include <vector>
-
-/************************** Helper functions *******************/
+/************************** Common functions *******************/
 struct Point2d {
   int x;
   int y;
@@ -26,10 +23,10 @@ struct Point2f {
   Point2f(Point2d a) : x(float(a.x)), y(float(a.y)) {}
 
   // operators
-  friend std::ostream &operator<<(std::ostream &os, const Point2f &v) {
-    os << "(" << v.x << ", " << v.y << ")";
-    return os;
-  }
+  //  friend std::ostream &operator<<(std::ostream &os, const Point2f &v) {
+  //    os << "(" << v.x << ", " << v.y << ")";
+  //    return os;
+  //  }
 
   friend bool operator==(const Point2f &L, const Point2f &R) {
     return std::tie(L.x, L.y) == std::tie(R.x, R.y);
@@ -51,7 +48,7 @@ inline float lenghtSquared(const Point2f &a, const Point2f &b) {
   auto v = a - b;
   return v.x * v.x + v.y * v.y;
 }
-/************************** Helper end ************************/
+/************************** Common end ************************/
 
 /*!
  * \brief The Node class containing position and id
@@ -122,6 +119,7 @@ public:
  */
 class QuadEdge {
 public:
+  // Constructor will init all Edges
   QuadEdge();
 
   Edge e[4];    // array containing 2 normal and 2 faces edges
@@ -168,8 +166,9 @@ private:
   Edge *makeEdgeFrom(const Node &ori, const Node &de);
   // creates an edge connecting a and b
   Edge *connect(Edge *a, Edge *b);
-  //
-  void deleteEdge(Edge *e);
+  // disconect edge from triangulation
+  void disconnectEdge(Edge *e);
+  // void deleteEdge(Edge *e);
 
 private:
   // vector of all memory created quad edges
