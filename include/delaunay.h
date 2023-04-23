@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <iostream>
 #include <math.h>
+#include <memory>
+#include <numeric>
 #include <tuple>
 #include <vector>
 
@@ -144,8 +146,15 @@ public:
   void computeTriangulation();
 
   std::vector<Edge *> edges_stack;
+  std::vector<std::shared_ptr<QuadEdge>> test;
 
   int connected_nodes = 0;
+  Edge *MakeEdge();
+  Edge *MakeEdgeFrom(Node ori, Node de);
+  Edge *Connect(Edge *a, Edge *b);
+  void DeleteEdge(Edge *e);
+
+  long deleted_count = 0;
 
 private:
   // Computes recursive Delaunay Triang
@@ -153,3 +162,7 @@ private:
 
   std::vector<Point2f> m_points;
 };
+
+int findSet(int i, const std::vector<int> &parent);
+float computeKruskalMinD(std::vector<Edge *> &a_solution,
+                         const DivideConquer &a_delaunay_triangulation);

@@ -6,10 +6,11 @@
 #include <vector>
 
 #include "include/delaunay.h"
-#include "include/kruskal.h"
 #include "include/viewer.h"
 
-#define Now() std::chrono::steady_clock::now()
+namespace ch = std::chrono;
+
+#define NOW() ch::steady_clock::now()
 
 #define WINDOW_WIDTH 1900
 #define WINDOW_HEIGHT 1000
@@ -49,47 +50,42 @@ void printVectorEdgeLenght(std::vector<Edge *> v) {
 
 int main() {
 
+  /********************* Generate Input ********************/
   std::vector<Point2f> rng =
       generateRandomPoints(50000, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
                            Point2f(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2));
 
-  auto t = Now();
-
+  /******************  Delaunay   *************/
+  // Compute Divide&Conquer and compute triangulation
+  auto t = NOW();
   DivideConquer DC(rng);
-  //  Edge *oleft;
-  //  Edge *oright;
-  //  DC.delaunay(oleft, oright, 0, rng.size() - 1);
   DC.computeTriangulation();
 
-  auto delaunay_dt =
-      std::chrono::duration_cast<std::chrono::milliseconds>(Now() - t).count();
+  std::cout << "Time Delaunay: "
+            << ch::duration_cast<ch::milliseconds>(NOW() - t).count() << "ms"
+            << std::endl;
 
-  auto kt = Now();
+  /******************  Kruskal   **************/
+  // Compute Kruskal
+  auto kt = ch::steady_clock::now();
+  std::vector<Edge *> solution;
+  float min_d = computeKruskalMinD(solution, DC);
 
-  Kruskal k(DC.edges_stack, DC.connected_nodes);
-  k.computeSolution();
-  std::cout << k.retrieveMinD() << std::endl;
-
-  auto kruskal_dt =
-      std::chrono::duration_cast<std::chrono::milliseconds>(Now() - kt).count();
-
-  std::cout << "Time Delaunay: " << delaunay_dt << "ms" << std::endl;
-  std::cout << "Time Kruskal: " << kruskal_dt << "ms" << std::endl;
+  std::cout << "Time Kruskal: "
+            << ch::duration_cast<ch::milliseconds>(NOW() - kt).count() << "ms"
+            << std::endl;
 
   std::cout << "Time TOTAL: "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(Now() - t)
-                   .count()
-            << "ms" << std::endl;
+            << ch::duration_cast<ch::milliseconds>(NOW() - t).count() << "ms"
+            << std::endl;
 
+  std::cout << "min_d: " << min_d << std::endl;
   Viewer viewer(WINDOW_WIDTH, WINDOW_HEIGHT);
 
-  bool update = false;
-  bool update_kruskal = false;
-  bool draw_base = false;
+  /*************** Rendering cycle ***************/
   bool quit = false;
-
   while (!quit) {
-    auto start_time_point = Now();
+    auto start_time_point = NOW();
 
     // get events
     SDL_Event event;
@@ -98,31 +94,15 @@ int main() {
       switch (event.type) {
         // shutdown window key
       case SDL_QUIT:
-      case SDLK_ESCAPE:
         quit = true;
         break;
 
       // a key pressed down
       case SDL_KEYDOWN:
-
         switch (event.key.keysym.sym) {
-
-          // add point
-        case SDLK_SPACE: {
-          Point2d mouse_pos;
-          SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
-          //          S.InsertSite(mouse_pos);
-          update = true;
+        case SDLK_ESCAPE:
+          quit = true;
           break;
-        }
-        case SDLK_RETURN: {
-          update_kruskal = true;
-          break;
-        }
-        case SDLK_BACKSPACE: {
-          draw_base = !draw_base;
-          break;
-        }
         }
         break;
       }
@@ -131,24 +111,7 @@ int main() {
     // clear window
     viewer.clear();
 
-    if (update_kruskal) {
-
-      update_kruskal = false;
-      auto t = Now();
-      k.computeSolution();
-      std::cout << "Time Kruskal: "
-                << std::chrono::duration_cast<std::chrono::milliseconds>(Now() -
-                                                                         t)
-                       .count()
-                << "ms" << std::endl;
-    }
-
-    //    Conquer divie
-    if (draw_base) {
-      viewer.drawAll(DC.edges_stack, 0, 0, 255);
-    }
-
-    viewer.drawAll(k.retrieveSol(), 255, 0, 0);
+    viewer.drawAll(solution, 255, 0, 0);
 
     viewer.drawVertex(rng, 0, 0x70, 0, 3);
     // present render

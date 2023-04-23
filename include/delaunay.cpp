@@ -26,12 +26,14 @@ void Edge::EndPoints(Node ori, Node de) {
 }
 
 /*********************** Basic Topological Operators ************************/
-Edge *MakeEdge() {
-  QuadEdge *ql = new QuadEdge;
+Edge *DivideConquer::MakeEdge() {
+
+  std::shared_ptr<QuadEdge> ql = std::make_shared<QuadEdge>();
+  test.push_back(ql);
   return ql->e;
 }
 
-Edge *MakeEdgeFrom(Node ori, Node de) {
+Edge *DivideConquer::MakeEdgeFrom(Node ori, Node de) {
   Edge *e = MakeEdge();
   e->EndPoints(ori, de);
   return e;
@@ -58,14 +60,15 @@ void Splice(Edge *a, Edge *b)
   alpha->next = t3;
   beta->next = t4;
 }
-void DeleteEdge(Edge *e) {
+void DivideConquer::DeleteEdge(Edge *e) {
   e->Qedge()->alive = false;
   Splice(e, e->Oprev());
   Splice(e->Sym(), e->Sym()->Oprev());
+  deleted_count++;
   // delete e->Qedge();
 }
 
-Edge *Connect(Edge *a, Edge *b)
+Edge *DivideConquer::Connect(Edge *a, Edge *b)
 // Add a new edge e connecting the destination of a to the
 // origin of b, in such a way that all three have the same
 // left face after the connection is complet e.
@@ -147,9 +150,9 @@ DivideConquer::DivideConquer(std::vector<Point2f> &v) {
 }
 
 DivideConquer::~DivideConquer() {
-  for (auto p : edges_stack) {
-    delete p;
-  }
+  //  for (auto p : edges_stack) {
+  //    delete p;
+  //  }
   edges_stack.clear();
 }
 // left: most left edge
@@ -307,4 +310,73 @@ void DivideConquer::computeTriangulation() {
   Edge *oright;
   delaunay(oleft, oright, 0, m_points.size() - 1);
   return;
+}
+
+/****************** Kruksal ******************/
+
+int findSet(int i, const std::vector<int> &parent) {
+  if (i == parent[i]) {
+    return i;
+  } else {
+    return findSet(parent[i], parent);
+  }
+}
+float computeKruskalMinD(std::vector<Edge *> &a_solution,
+                         const DivideConquer &a_delaunay_triangulation) {
+
+  // init
+  float min_d = 0;
+
+  // generate unique sets for each node
+  std::vector<int> parent;
+  parent.resize(a_delaunay_triangulation.connected_nodes);
+  std::iota(std::begin(parent), std::end(parent), 0);
+
+  // get vailable edge vector
+  std::vector<Edge *> valid_edges;
+  valid_edges.reserve(a_delaunay_triangulation.edges_stack.size() -
+                      a_delaunay_triangulation.deleted_count);
+  for (auto i : a_delaunay_triangulation.edges_stack) {
+    if (i->Qedge()->alive) {
+      valid_edges.push_back(i);
+    }
+  }
+
+  std::sort(valid_edges.begin(), valid_edges.end(), [](Edge *i, Edge *j) {
+    return (i->Qedge()->lenght < j->Qedge()->lenght);
+  });
+
+  // loop all edges
+  int node_orig_set = 0;
+  int node_dest_set = 0;
+  for (int i = 0; i < valid_edges.size(); i++) {
+
+    if (!valid_edges[i]->Qedge()->alive) {
+      continue;
+    }
+
+    //
+    node_orig_set = findSet(valid_edges[i]->Org().id, parent);
+    node_dest_set = findSet(valid_edges[i]->Dest().id, parent);
+
+    // not in same set already
+    if (node_orig_set != node_dest_set) {
+      a_solution.push_back(valid_edges[i]); // add to tree
+      // union two different set of points
+      parent[node_orig_set] = parent[node_dest_set];
+
+      // take minimym distance
+      if (valid_edges[i]->Qedge()->lenght > min_d) {
+        min_d = valid_edges[i]->Qedge()->lenght;
+      }
+
+      if (a_solution.size() == a_delaunay_triangulation.connected_nodes - 1) {
+        break;
+      }
+    }
+  }
+
+  // get real dist
+  min_d = std::sqrt(min_d);
+  return min_d;
 }
