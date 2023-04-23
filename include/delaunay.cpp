@@ -28,8 +28,8 @@ void Edge::setEndPoints(const Node &ori, const Node &dest) {
 
 /*********************** Basic Topological Operators ************************/
 
-int insideCircle(const Point2f &p, const Point2f &a, const Point2f &b,
-                 const Point2f &c) {
+int insideCircle(const float2 &p, const float2 &a, const float2 &b,
+                 const float2 &c) {
   return (a.x * a.x + a.y * a.y) * computeArea(b, c, p) -
              (b.x * b.x + b.y * b.y) * computeArea(a, c, p) +
              (c.x * c.x + c.y * c.y) * computeArea(a, b, p) -
@@ -37,15 +37,15 @@ int insideCircle(const Point2f &p, const Point2f &a, const Point2f &b,
          0;
 }
 
-int ccw(const Point2f &a, const Point2f &b, const Point2f &c) {
+int ccw(const float2 &a, const float2 &b, const float2 &c) {
   return (computeArea(a, b, c) > 0);
 }
 
-int rightOf(const Point2f &p, Edge *e) {
+int rightOf(const float2 &p, Edge *e) {
   return ccw(p, e->Dest2d(), e->Org2d());
 }
 
-int leftOf(const Point2f &p, Edge *e) {
+int leftOf(const float2 &p, Edge *e) {
   return ccw(p, e->Org2d(), e->Dest2d());
 }
 
@@ -242,26 +242,28 @@ void DivideConquer::recursiveDelaunay(Edge *&o_left, Edge *&o_right,
   }
 }
 
-void DivideConquer::computeTriangulation(std::vector<Point2f> &a_stars_system) {
+void DivideConquer::computeTriangulation(
+    std::vector<float2> const &a_stars_system) {
 
+  std::vector<float2> temp_stars_system = a_stars_system;
   // Sort points front left-to-right, then down-up only if X==Y
-  std::sort(a_stars_system.begin(), a_stars_system.end(),
-            [](const Point2f &a, const Point2f &b) {
+  std::sort(temp_stars_system.begin(), temp_stars_system.end(),
+            [](const float2 &a, const float2 &b) {
               if (a.x == b.x)
                 return (a.y < b.y); // down to up
               return a.x < b.x;     // left to right
             });
 
-  m_ordered_points.reserve(a_stars_system.size());
+  m_ordered_points.reserve(temp_stars_system.size());
   // remove repeated:
   // worst: all equals? -> O(n), all diff -> O(2*n) = O(n)
-  for (int i(0); i < a_stars_system.size(); i++) {
+  for (int i(0); i < temp_stars_system.size(); i++) {
 
-    const Point2f &p = a_stars_system[i];
+    const float2 &p = temp_stars_system[i];
     m_ordered_points.push_back(p);
 
-    for (int j(i + 1); j < a_stars_system.size(); j++) {
-      const Point2f &q = a_stars_system[j];
+    for (int j(i + 1); j < temp_stars_system.size(); j++) {
+      const float2 &q = temp_stars_system[j];
       // not same
       if (fabsf(q.x - p.x) != 0 || fabsf(q.y - p.y) != 0) {
         break;

@@ -5,22 +5,22 @@
 #include <numeric>
 #include <vector>
 /************************** Common functions *******************/
-struct Point2d {
+struct int2 {
   int x;
   int y;
 
-  Point2d(int X, int Y) : x(X), y(Y) {}
-  Point2d() : x(0), y(0) {}
+  int2(int X, int Y) : x(X), y(Y) {}
+  int2() : x(0), y(0) {}
 };
 
-struct Point2f {
+struct float2 {
 
   float x;
   float y;
 
-  Point2f(float X, float Y) : x(X), y(Y) {}
-  Point2f() : x(0), y(0) {}
-  Point2f(Point2d a) : x(float(a.x)), y(float(a.y)) {}
+  float2(float X, float Y) : x(X), y(Y) {}
+  float2() : x(0), y(0) {}
+  float2(int2 a) : x(float(a.x)), y(float(a.y)) {}
 
   // operators
   //  friend std::ostream &operator<<(std::ostream &os, const Point2f &v) {
@@ -28,23 +28,23 @@ struct Point2f {
   //    return os;
   //  }
 
-  friend bool operator==(const Point2f &L, const Point2f &R) {
+  friend bool operator==(const float2 &L, const float2 &R) {
     return std::tie(L.x, L.y) == std::tie(R.x, R.y);
   }
 
-  Point2f &operator-=(const Point2f &v) {
+  float2 &operator-=(const float2 &v) {
     this->x -= v.x;
     this->y -= v.y;
     return *this;
   }
 };
 
-inline Point2f operator-(const Point2f &L, const Point2f &R) {
-  return Point2f(L) -= R;
+inline float2 operator-(const float2 &L, const float2 &R) {
+  return float2(L) -= R;
 }
 
 // computes squared euclidean distance between two points
-inline float lenghtSquared(const Point2f &a, const Point2f &b) {
+inline float lenghtSquared(const float2 &a, const float2 &b) {
   auto v = a - b;
   return v.x * v.x + v.y * v.y;
 }
@@ -56,9 +56,9 @@ inline float lenghtSquared(const Point2f &a, const Point2f &b) {
 struct Node {
 
   Node(){};
-  Node(const Point2f &d, int idx) : pos(d), id(idx){};
+  Node(const float2 &d, int idx) : pos(d), id(idx){};
 
-  Point2f pos; // node's position
+  float2 pos; // node's position
   int id;      // nodes id = used as index later
 };
 
@@ -96,9 +96,9 @@ public:
   // return destination node
   inline Node Dest() { return Sym()->node; }
   // return origin node position
-  const Point2f &Org2d() const { return node.pos; }
+  const float2 &Org2d() const { return node.pos; }
   // return dest node position
-  const Point2f &Dest2d() const {
+  const float2 &Dest2d() const {
     return (index < 2) ? ((this + 2)->node.pos) : ((this - 2)->node.pos);
   }
 
@@ -140,7 +140,7 @@ public:
    * \brief Computes Divide&Conquer DelaunayTriang from 2d points
    * \param stars_system vector float of 2d points
    */
-  void computeTriangulation(std::vector<Point2f> &a_stars_system);
+  void computeTriangulation(std::vector<float2> const &a_stars_system);
 
   /*!
    * \brief Computes Kruskal on triangulation and outputs minimum d and graph
@@ -174,7 +174,7 @@ private:
   // vector of all memory created quad edges
   std::vector<std::shared_ptr<QuadEdge>> m_quad_edges;
   // unique ordered points
-  std::vector<Point2f> m_ordered_points;
+  std::vector<float2> m_ordered_points;
   // number of nodes added to Delaunay
   int m_num_nodes = 0;
   // number of edges 'deleted'
@@ -183,21 +183,21 @@ private:
 
 /*********** Operators for Data Structure *************/
 // Returns twice the area of the oriented triangle (a, b, c)
-inline float computeArea(const Point2f &a, const Point2f &b, const Point2f &c) {
+inline float computeArea(const float2 &a, const float2 &b, const float2 &c) {
   return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 // Return true if point P inside triangle abc
-int insideCircle(const Point2f &p, const Point2f &a, const Point2f &b,
-                 const Point2f &c);
+int insideCircle(const float2 &p, const float2 &a, const float2 &b,
+                 const float2 &c);
 
 // Returns true if the points a, b, c are in a counterclockwise order
-int ccw(const Point2f &a, const Point2f &b, const Point2f &c);
+int ccw(const float2 &a, const float2 &b, const float2 &c);
 
 // True if p is right of edge e
-int rightOf(const Point2f &p, Edge *e);
+int rightOf(const float2 &p, Edge *e);
 
 // True if p is left of edge e
-int leftOf(const Point2f &p, Edge *e);
+int leftOf(const float2 &p, Edge *e);
 
 // Checks whether the edge e is above basel
 bool isValid(Edge *e, Edge *basel);

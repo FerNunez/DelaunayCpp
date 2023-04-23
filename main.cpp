@@ -18,9 +18,9 @@ namespace ch = std::chrono;
 const int FRAME_RATE = 5;
 const int FRAME_DELAY = 1000 / FRAME_RATE;
 
-std::vector<Point2f> generateRandomPoints(int num_points, int radius_x,
-                                          int radius_y, Point2f offset) {
-  std::vector<Point2f> points;
+std::vector<float2> const generateRandomPoints(int num_points, int radius_x,
+                                                int radius_y, float2 offset) {
+  std::vector<float2> points;
   points.reserve(num_points);
 
   std::random_device rd;
@@ -35,7 +35,7 @@ std::vector<Point2f> generateRandomPoints(int num_points, int radius_x,
   std::uniform_real_distribution<float> dis_y(-radius_y, radius_y);
 
   for (size_t i = 0; i < num_points; ++i) {
-    Point2d const pos(int(dis_x(gen)) + offset.x, int(dis_y(gen)) + offset.y);
+    int2 const pos(int(dis_x(gen)) + offset.x, int(dis_y(gen)) + offset.y);
     points.emplace_back(pos);
   }
 
@@ -46,12 +46,6 @@ int main() {
 
   // Viewer
   Viewer viewer(WINDOW_WIDTH, WINDOW_HEIGHT);
-
-  // Input
-  std::vector<Point2f> rng;
-
-  // Output
-  std::vector<Edge *> solution;
 
   /*************** Rendering cycle ***************/
   bool quit = false;
@@ -88,16 +82,21 @@ int main() {
     } // end of pull event while
 
     if (update) {
+
+      // Input
+
+      // Output
+      std::vector<Edge *> solution;
+
       update = false;
-      solution.clear();
-      rng.clear();
 
       // Delaunay
       DivideConquer DC;
 
       /********************* Generate Input ********************/
-      rng = generateRandomPoints(50000, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
-                                 Point2f(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2));
+      std::vector<float2> const rng =
+          generateRandomPoints(50000, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
+                               float2(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2));
 
       /******************  Delaunay   *************/
       // Compute Divide&Conquer and compute triangulation

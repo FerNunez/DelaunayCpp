@@ -23,7 +23,7 @@ public:
   }
 
   void show(const std::vector<Edge *> &vector_e,
-            const std::vector<Point2f> &vertex) {
+            const std::vector<float2> &vertex) {
     clear();
     drawAll(vector_e, 255, 0, 0);
     drawVertex(vertex, 0, 0x70, 0, 3);
@@ -39,7 +39,7 @@ private:
 
   void drawEdge(const Edge &, int, int, int);
   void drawAll(const std::vector<Edge *> &vector_e, int, int, int);
-  void drawVertex(const std::vector<Point2f> &, int, int, int, int);
+  void drawVertex(const std::vector<float2> &, int, int, int, int);
 
 private:
   SDL_Window *window;
@@ -68,7 +68,7 @@ void Viewer::drawAll(const std::vector<Edge *> &vector_e, int r, int g, int b) {
   }
 }
 
-void Viewer::drawVertex(const std::vector<Point2f> &vertex, int r, int g, int b,
+void Viewer::drawVertex(const std::vector<float2> &vertex, int r, int g, int b,
                         int scale) {
 
   SDL_RenderSetScale(renderer, scale, scale);
