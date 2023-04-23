@@ -52,7 +52,8 @@ int leftOf(const Point2f &p, Edge *e) {
 bool isValid(Edge *e, Edge *basel) { return rightOf(e->Dest2d(), basel); }
 
 Edge *DivideConquer::makeEdge() {
-  std::shared_ptr<QuadEdge> ql = std::make_shared<QuadEdge>();
+  std::shared_ptr<QuadEdge> ql =
+      std::make_shared<QuadEdge>(); // create 4 definition of edge
   m_quad_edges.push_back(ql);
   return ql->e;
 }
@@ -98,8 +99,7 @@ Edge *DivideConquer::connect(Edge *a, Edge *b) {
 }
 
 /************************* Delaunay Triangulation Algorithm  ******************/
-// left: most left edge
-// right: most right edge
+
 void DivideConquer::recursiveDelaunay(Edge *&o_left, Edge *&o_right,
                                       int left_idx, int right_idx) {
   // starts calling
@@ -117,7 +117,6 @@ void DivideConquer::recursiveDelaunay(Edge *&o_left, Edge *&o_right,
     o_left = e;
     o_right = e->Sym();
 
-    m_edges.push_back(e);
     return;
   }
   // abc
@@ -136,19 +135,15 @@ void DivideConquer::recursiveDelaunay(Edge *&o_left, Edge *&o_right,
     // c.y < b.y
     if (ccw(m_ordered_points[left_idx], m_ordered_points[left_idx + 1],
             m_ordered_points[right_idx])) {
-      Edge *c = connect(bc, ab);
+      connect(bc, ab);
       o_left = ab;
       o_right = bc->Sym();
-
-      m_edges.push_back(c);
 
     } else if (ccw(m_ordered_points[left_idx], m_ordered_points[right_idx],
                    m_ordered_points[left_idx + 1])) {
       Edge *c = connect(bc, ab);
       o_left = c->Sym();
       o_right = c;
-
-      m_edges.push_back(c);
 
     }
     // Three points are colinear
@@ -157,8 +152,6 @@ void DivideConquer::recursiveDelaunay(Edge *&o_left, Edge *&o_right,
       o_right = bc->Sym();
     }
 
-    m_edges.push_back(ab);
-    m_edges.push_back(bc);
     return;
   }
   // more than 3 points => recursive
@@ -194,7 +187,6 @@ void DivideConquer::recursiveDelaunay(Edge *&o_left, Edge *&o_right,
     if (rdi->Org2d() == rdo->Org2d()) {
       rdo = basel;
     }
-    m_edges.push_back(basel);
 
     // This is the merge loop.
     do {
@@ -240,7 +232,6 @@ void DivideConquer::recursiveDelaunay(Edge *&o_left, Edge *&o_right,
         // Add cross edge base1 from basel->Org() to lcand->->Dest2d()
         basel = connect(basel->Sym(), lcand->Sym());
       }
-      m_edges.push_back(basel);
 
     } while (true);
 
@@ -261,6 +252,7 @@ void DivideConquer::computeTriangulation(std::vector<Point2f> &a_stars_system) {
               return a.x < b.x;
             });
 
+  m_ordered_points.reserve(a_stars_system.size());
   // remove repeated:
   // worst: all equals? -> O(n), all diff -> O(2*n) = O(n)
   for (int i(0); i < a_stars_system.size(); i++) {
@@ -279,7 +271,12 @@ void DivideConquer::computeTriangulation(std::vector<Point2f> &a_stars_system) {
     }
   }
 
-  // Divide and Conquer: https://dl.acm.org/doi/pdf/10.1145/282918.282923
+  // Reserve the best case:
+  // #edges = (3* #triangles+b)/2 = (6*n-3*b-6+b) /2
+  // #edges = 3*n-b-3 => most edge = 3*n-3-3
+  m_quad_edges.reserve(3 * m_ordered_points.size() - 6);
+  // Divide and Conquer:
+  // https://dl.acm.org/doi/pdf/10.1145/282918.282923
   Edge *oleft;
   Edge *oright;
   recursiveDelaunay(oleft, oright, 0, m_ordered_points.size() - 1);
@@ -304,12 +301,12 @@ float DivideConquer::computeKruskalMinD(std::vector<Edge *> &a_solution) {
   cluster_id.resize(m_num_nodes);
   std::iota(std::begin(cluster_id), std::end(cluster_id), 0);
 
-  // get only alive edges
+  // get only alive edges (edges are easier to sort)
   std::vector<Edge *> valid_edges;
-  valid_edges.reserve(m_edges.size() - m_num_deleted_edges);
-  for (auto i : m_edges) {
-    if (i->getQuadEdge()->alive) {
-      valid_edges.push_back(i);
+  valid_edges.reserve(m_quad_edges.size() - m_num_deleted_edges);
+  for (const auto &i : m_quad_edges) {
+    if (i->alive) {
+      valid_edges.push_back(i->e);
     }
   }
 

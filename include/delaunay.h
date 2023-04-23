@@ -129,18 +129,12 @@ public:
   bool alive;   // true if edge was 'removed'
 };
 
-// Returns twice the area of the oriented triangle (a, b, c)
-inline float computeArea(const Point2f &a, const Point2f &b, const Point2f &c) {
-  return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-}
-
 /*********************** DivideConquer *************************************/
 
 /*!
  * \brief The DivideConquer class applies Delaunay Triangulation Divide&Conquer
  */
 class DivideConquer {
-  // private:
 public:
   DivideConquer(){};
 
@@ -157,23 +151,14 @@ public:
    */
   float computeKruskalMinD(std::vector<Edge *> &esmt_solution);
 
-  /*!
-   * \brief vector of edges for triangulation. Smaller & used more than quad
-   */
-  std::vector<Edge *> m_edges;
-
-  /*!
-   * \brief number of nodes added to Delaunay
-   */
-  int m_num_nodes = 0;
-
-  /*!
-   * \brief number of edges 'deleted'
-   */
-  int m_num_deleted_edges = 0;
-
 private:
-  // Computes recursive Delaunay Triangulation
+  /*!
+   * \brief Computes recursive Delaunay Triangulation
+   * \param left output pointer edge of most left edge of triangulation
+   * \param right output pointer edge of most right edge of triangulation
+   * \param left_idx input index limiting left side of vector to triangulate
+   * \param right_idx input index limiting right side of vector to triang
+   */
   void recursiveDelaunay(Edge *&left, Edge *&right, int left_idx,
                          int right_idx);
 
@@ -186,22 +171,33 @@ private:
   //
   void deleteEdge(Edge *e);
 
-  // TODO: improve. used for smart ptr life in class
-  std::vector<std::shared_ptr<QuadEdge>>
-      m_quad_edges; // vector of all memory created quad edges
-  std::vector<Point2f> m_ordered_points; // unique ordered points
+private:
+  // vector of all memory created quad edges
+  std::vector<std::shared_ptr<QuadEdge>> m_quad_edges;
+  // unique ordered points
+  std::vector<Point2f> m_ordered_points;
+  // number of nodes added to Delaunay
+  int m_num_nodes = 0;
+  // number of edges 'deleted'
+  int m_num_deleted_edges = 0;
 };
 
 /*********** Operators for Data Structure *************/
-// Checks if
+// Returns twice the area of the oriented triangle (a, b, c)
+inline float computeArea(const Point2f &a, const Point2f &b, const Point2f &c) {
+  return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+}
+// Return true if point P inside triangle abc
 int insideCircle(const Point2f &p, const Point2f &a, const Point2f &b,
                  const Point2f &c);
 
-// Returns TRUE if the points a, b, c are in a counterclockwise order
+// Returns true if the points a, b, c are in a counterclockwise order
 int ccw(const Point2f &a, const Point2f &b, const Point2f &c);
 
-// Check if p is right or left of edge e
+// True if p is right of edge e
 int rightOf(const Point2f &p, Edge *e);
+
+// True if p is left of edge e
 int leftOf(const Point2f &p, Edge *e);
 
 // Checks whether the edge e is above basel
@@ -210,8 +206,9 @@ bool isValid(Edge *e, Edge *basel);
 // operator for split and connect edges
 void Splice(Edge *a, Edge *b);
 
+/*** for Kruskal ****/
 /*!
- * \brief Find cluster id (parent of all clusters)
+ * \brief Find cluster id (parent of all clusters) recursively
  * \param index of a node
  * \param vector of ids of clusters
  * \return int id of cluster for node index
