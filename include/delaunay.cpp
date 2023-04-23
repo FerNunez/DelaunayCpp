@@ -244,12 +244,12 @@ void DivideConquer::recursiveDelaunay(Edge *&o_left, Edge *&o_right,
 
 void DivideConquer::computeTriangulation(std::vector<Point2f> &a_stars_system) {
 
-  // Sort points front left-to-right, then up-down only if X==Y
+  // Sort points front left-to-right, then down-up only if X==Y
   std::sort(a_stars_system.begin(), a_stars_system.end(),
             [](const Point2f &a, const Point2f &b) {
               if (a.x == b.x)
-                return (a.y > b.y);
-              return a.x < b.x;
+                return (a.y < b.y); // down to up
+              return a.x < b.x;     // left to right
             });
 
   m_ordered_points.reserve(a_stars_system.size());

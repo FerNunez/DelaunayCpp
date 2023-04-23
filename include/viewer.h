@@ -22,6 +22,15 @@ public:
     SDL_Quit();
   }
 
+  void show(const std::vector<Edge *> &vector_e,
+            const std::vector<Point2f> &vertex) {
+    clear();
+    drawAll(vector_e, 255, 0, 0);
+    drawVertex(vertex, 0, 0x70, 0, 3);
+    render();
+  }
+
+private:
   void render() { SDL_RenderPresent(renderer); }
   void clear() {
     SDL_SetRenderDrawColor(renderer, 242, 242, 242, 255);

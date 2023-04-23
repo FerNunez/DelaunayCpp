@@ -15,7 +15,7 @@ namespace ch = std::chrono;
 #define WINDOW_WIDTH 1900
 #define WINDOW_HEIGHT 1000
 
-const int FRAME_RATE = 60;
+const int FRAME_RATE = 5;
 const int FRAME_DELAY = 1000 / FRAME_RATE;
 
 std::vector<Point2f> generateRandomPoints(int num_points, int radius_x,
@@ -29,6 +29,7 @@ std::vector<Point2f> generateRandomPoints(int num_points, int radius_x,
   std::cout << "rndd: " << rndd << std::endl;
   std::mt19937 gen(rndd);
   // std::mt19937 gen(2731319382); // BUG CHECK!
+  // std::mt19937 gen(2201349777); // bug?
   //  rndd: 3369158952
   std::uniform_real_distribution<float> dis_x(-radius_x, radius_x);
   std::uniform_real_distribution<float> dis_y(-radius_y, radius_y);
@@ -43,40 +44,19 @@ std::vector<Point2f> generateRandomPoints(int num_points, int radius_x,
 
 int main() {
 
-  /********************* Generate Input ********************/
-  std::vector<Point2f> rng =
-      generateRandomPoints(50000, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
-                           Point2f(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2));
-
-  /******************  Delaunay   *************/
-  // Compute Divide&Conquer and compute triangulation
-  auto t = NOW();
-  DivideConquer DC;
-  DC.computeTriangulation(rng);
-
-  std::cout << "Time Delaunay: "
-            << ch::duration_cast<ch::milliseconds>(NOW() - t).count() << "ms"
-            << std::endl;
-
-  /******************  Kruskal   **************/
-  // Compute Kruskal
-  auto kt = ch::steady_clock::now();
-  std::vector<Edge *> solution;
-  float min_d = DC.computeKruskalMinD(solution);
-
-  std::cout << "Time Kruskal: "
-            << ch::duration_cast<ch::milliseconds>(NOW() - kt).count() << "ms"
-            << std::endl;
-
-  std::cout << "Time TOTAL: "
-            << ch::duration_cast<ch::milliseconds>(NOW() - t).count() << "ms"
-            << std::endl;
-
-  std::cout << "min_d: " << min_d << std::endl;
+  // Viewer
   Viewer viewer(WINDOW_WIDTH, WINDOW_HEIGHT);
+
+  // Input
+  std::vector<Point2f> rng;
+
+  // Output
+  std::vector<Edge *> solution;
 
   /*************** Rendering cycle ***************/
   bool quit = false;
+  bool update = true;
+  bool draw = true;
   while (!quit) {
     auto start_time_point = NOW();
 
@@ -96,26 +76,55 @@ int main() {
         case SDLK_ESCAPE:
           quit = true;
           break;
+        case SDLK_SPACE:
+          update = true;
+          break;
+        case SDLK_RETURN:
+          draw = !draw;
+          break;
         }
         break;
       }
     } // end of pull event while
 
-    // clear window
-    viewer.clear();
+    if (update) {
+      update = false;
+      solution.clear();
+      rng.clear();
 
-    viewer.drawAll(solution, 255, 0, 0);
+      // Delaunay
+      DivideConquer DC;
 
-    viewer.drawVertex(rng, 0, 0x70, 0, 3);
-    // present render
-    viewer.render();
+      /********************* Generate Input ********************/
+      rng = generateRandomPoints(50000, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
+                                 Point2f(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2));
 
-    auto elapsed_time_duration =
-        std::chrono::steady_clock::now() - start_time_point;
+      /******************  Delaunay   *************/
+      // Compute Divide&Conquer and compute triangulation
+      auto t = NOW();
+      DC.computeTriangulation(rng);
+      std::cout << "Time Delaunay: "
+                << ch::duration_cast<ch::milliseconds>(NOW() - t).count()
+                << "ms" << std::endl;
 
-    if (elapsed_time_duration < std::chrono::milliseconds(FRAME_DELAY)) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(FRAME_DELAY) -
-                                  elapsed_time_duration);
+      /******************  Kruskal   **************/
+      // Compute Kruskal
+      auto kt = ch::steady_clock::now();
+      float min_d = DC.computeKruskalMinD(solution);
+      std::cout << "Time Kruskal: "
+                << ch::duration_cast<ch::milliseconds>(NOW() - kt).count()
+                << "ms" << std::endl;
+
+      std::cout << "Time TOTAL: "
+                << ch::duration_cast<ch::milliseconds>(NOW() - t).count()
+                << "ms" << std::endl;
+
+      std::cout << "min_d: " << min_d << std::endl;
+
+      // show
+      if (draw) {
+        viewer.show(solution, rng);
+      }
     }
   }
 
