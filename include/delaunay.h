@@ -7,8 +7,6 @@
 #include <tuple>
 #include <vector>
 
-#define EPS 0.0001
-
 /************************** Helper functions *******************/
 struct Point2d {
   int x;
@@ -48,13 +46,12 @@ inline Point2f operator-(const Point2f &L, const Point2f &R) {
   return Point2f(L) -= R;
 }
 
+// computes squared euclidean distance between two points
 inline float lenghtSquared(const Point2f &a, const Point2f &b) {
   auto v = a - b;
   return v.x * v.x + v.y * v.y;
 }
 /************************** Helper end ************************/
-
-// ************************* Delaunay Triangulation ******************
 
 /*!
  * \brief The Node class containing position and id
@@ -62,13 +59,12 @@ inline float lenghtSquared(const Point2f &a, const Point2f &b) {
 struct Node {
 
   Node(){};
-  Node(const Point2f &d) : pos(d), id(-1){};
+  Node(const Point2f &d, int idx) : pos(d), id(idx){};
 
   Point2f pos; // node's position
-  int id;
+  int id;      // nodes id = used as index later
 };
 
-// forward declaration of QuadEdges
 class QuadEdge;
 
 class Edge {
@@ -80,6 +76,8 @@ public:
 
 public:
   Edge() {}
+
+  // Basic four operators
   // Return the dual of the current edge, directed from its right to its left.
   inline Edge *Rot() { return (index < 3) ? this + 1 : this - 3; }
   // Return the dual of the current edge, directed from its left to its right.
@@ -88,31 +86,35 @@ public:
   inline Edge *Sym() { return (index < 2) ? this + 2 : this - 2; }
   // Return the next ccw edge around (from) the origin of the current edge.
   inline Edge *Onext() { return next; }
+
   // Return the next cw edge around (from) the origin of the current edge.
   inline Edge *Oprev() { return Rot()->Onext()->Rot(); }
-  // Return the next ccw edge around (into) the destination of the current edge.
-  inline Edge *Dnext() { return Sym()->Onext()->Sym(); }
-  // Return the next cw edge around (into) the destination of the current edge.
-  inline Edge *Dprev() { return invRot()->Onext()->invRot(); }
   // Return the ccw edge around the left face following the current edge.
   inline Edge *Lnext() { return invRot()->Onext()->Rot(); }
-  // Return the ccw edge around the left face before the current edge.
-  inline Edge *Lprev() { return Onext()->Sym(); }
-  // Return the edge around the right face ccw following the current edge.
-  inline Edge *Rnext() { return Rot()->Onext()->invRot(); }
   // Return the edge around the right face ccw before the current edge.
   inline Edge *Rprev() { return Sym()->Onext(); }
+
+  // return origin node
   inline Node Org() { return node; }
+  // return destination node
   inline Node Dest() { return Sym()->node; }
+  // return origin node position
   const Point2f &Org2d() const { return node.pos; }
+  // return dest node position
   const Point2f &Dest2d() const {
     return (index < 2) ? ((this + 2)->node.pos) : ((this - 2)->node.pos);
   }
 
-  void EndPoints(Node ori, Node de);
+  /*!
+   * \brief Sets dest and origin nodes of edge
+   */
+  void setEndPoints(const Node &ori, const Node &de);
 
-  // to remove
-  QuadEdge *Qedge() { return (QuadEdge *)(this - index); }
+  /*!
+   * \brief Get pointer to father quadEdge
+   * \return pointer to father quadEdge of edge
+   */
+  QuadEdge *getQuadEdge() { return (QuadEdge *)(this - index); }
 };
 
 /*!
@@ -124,7 +126,7 @@ public:
 
   Edge e[4];    // array containing 2 normal and 2 faces edges
   float lenght; // lenght squared
-  bool alive;   // edge is 'removed'
+  bool alive;   // true if edge was 'removed'
 };
 
 // Returns twice the area of the oriented triangle (a, b, c)
@@ -140,29 +142,78 @@ inline float computeArea(const Point2f &a, const Point2f &b, const Point2f &c) {
 class DivideConquer {
   // private:
 public:
-  DivideConquer(std::vector<Point2f> &);
-  ~DivideConquer();
+  DivideConquer(){};
 
-  void computeTriangulation();
+  /*!
+   * \brief Computes Divide&Conquer DelaunayTriang from 2d points
+   * \param stars_system vector float of 2d points
+   */
+  void computeTriangulation(std::vector<Point2f> &a_stars_system);
 
-  std::vector<Edge *> edges_stack;
-  std::vector<std::shared_ptr<QuadEdge>> test;
+  /*!
+   * \brief Computes Kruskal on triangulation and outputs minimum d and graph
+   * \param esmt_solution vector of edges for triangulation on Delaunay
+   * \return
+   */
+  float computeKruskalMinD(std::vector<Edge *> &esmt_solution);
 
-  int connected_nodes = 0;
-  Edge *MakeEdge();
-  Edge *MakeEdgeFrom(Node ori, Node de);
-  Edge *Connect(Edge *a, Edge *b);
-  void DeleteEdge(Edge *e);
+  /*!
+   * \brief vector of edges for triangulation. Smaller & used more than quad
+   */
+  std::vector<Edge *> m_edges;
 
-  long deleted_count = 0;
+  /*!
+   * \brief number of nodes added to Delaunay
+   */
+  int m_num_nodes = 0;
+
+  /*!
+   * \brief number of edges 'deleted'
+   */
+  int m_num_deleted_edges = 0;
 
 private:
-  // Computes recursive Delaunay Triang
-  void delaunay(Edge *&left, Edge *&right, int left_idx, int right_idx);
+  // Computes recursive Delaunay Triangulation
+  void recursiveDelaunay(Edge *&left, Edge *&right, int left_idx,
+                         int right_idx);
 
-  std::vector<Point2f> m_points;
+  // creates an edge (and its quad edge)
+  Edge *makeEdge();
+  // creates an edge (and its quad edge) from node
+  Edge *makeEdgeFrom(const Node &ori, const Node &de);
+  // creates an edge connecting a and b
+  Edge *connect(Edge *a, Edge *b);
+  //
+  void deleteEdge(Edge *e);
+
+  // TODO: improve. used for smart ptr life in class
+  std::vector<std::shared_ptr<QuadEdge>>
+      m_quad_edges; // vector of all memory created quad edges
+  std::vector<Point2f> m_ordered_points; // unique ordered points
 };
 
-int findSet(int i, const std::vector<int> &parent);
-float computeKruskalMinD(std::vector<Edge *> &a_solution,
-                         const DivideConquer &a_delaunay_triangulation);
+/*********** Operators for Data Structure *************/
+// Checks if
+int insideCircle(const Point2f &p, const Point2f &a, const Point2f &b,
+                 const Point2f &c);
+
+// Returns TRUE if the points a, b, c are in a counterclockwise order
+int ccw(const Point2f &a, const Point2f &b, const Point2f &c);
+
+// Check if p is right or left of edge e
+int rightOf(const Point2f &p, Edge *e);
+int leftOf(const Point2f &p, Edge *e);
+
+// Checks whether the edge e is above basel
+bool isValid(Edge *e, Edge *basel);
+
+// operator for split and connect edges
+void Splice(Edge *a, Edge *b);
+
+/*!
+ * \brief Find cluster id (parent of all clusters)
+ * \param index of a node
+ * \param vector of ids of clusters
+ * \return int id of cluster for node index
+ */
+int findCluster(int idx, const std::vector<int> &a_cluster);

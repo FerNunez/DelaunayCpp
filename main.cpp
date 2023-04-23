@@ -28,8 +28,8 @@ std::vector<Point2f> generateRandomPoints(int num_points, int radius_x,
   auto rndd = rd();
   std::cout << "rndd: " << rndd << std::endl;
   std::mt19937 gen(rndd);
-  //  std::mt19937 gen(2314271317); // 2314271317 - 50mil
-  //  std::mt19937 gen(3489932919);
+  //  std::mt19937 gen(2731319382); // BUG CHECK!
+  // rndd: 3369158952
   std::uniform_real_distribution<float> dis_x(-radius_x, radius_x);
   std::uniform_real_distribution<float> dis_y(-radius_y, radius_y);
 
@@ -41,12 +41,12 @@ std::vector<Point2f> generateRandomPoints(int num_points, int radius_x,
   return points;
 }
 
-void printVectorEdgeLenght(std::vector<Edge *> v) {
-  for (auto e : v) {
-    std::cout << e->Qedge()->lenght << ", ";
-  }
-  std::cout << " - " << std::endl;
-}
+// void printVectorEdgeLenght(std::vector<Edge *> v) {
+//   for (auto e : v) {
+//     std::cout << e->getQuadEdge()->lenght << ", ";
+//   }
+//   std::cout << " - " << std::endl;
+// }
 
 int main() {
 
@@ -58,8 +58,8 @@ int main() {
   /******************  Delaunay   *************/
   // Compute Divide&Conquer and compute triangulation
   auto t = NOW();
-  DivideConquer DC(rng);
-  DC.computeTriangulation();
+  DivideConquer DC;
+  DC.computeTriangulation(rng);
 
   std::cout << "Time Delaunay: "
             << ch::duration_cast<ch::milliseconds>(NOW() - t).count() << "ms"
@@ -69,7 +69,7 @@ int main() {
   // Compute Kruskal
   auto kt = ch::steady_clock::now();
   std::vector<Edge *> solution;
-  float min_d = computeKruskalMinD(solution, DC);
+  float min_d = DC.computeKruskalMinD(solution);
 
   std::cout << "Time Kruskal: "
             << ch::duration_cast<ch::milliseconds>(NOW() - kt).count() << "ms"
