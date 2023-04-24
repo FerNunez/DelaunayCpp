@@ -1,9 +1,12 @@
 #pragma once
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 #include <memory>
 #include <numeric>
 #include <vector>
+
+#define EPSILON 1e-6
 /************************** Common functions *******************/
 struct int2 {
   int x;
@@ -23,13 +26,14 @@ struct float2 {
   float2(int2 a) : x(float(a.x)), y(float(a.y)) {}
 
   // operators
-  //  friend std::ostream &operator<<(std::ostream &os, const Point2f &v) {
-  //    os << "(" << v.x << ", " << v.y << ")";
-  //    return os;
-  //  }
+  friend std::ostream &operator<<(std::ostream &os, const float2 &v) {
+    os << "(" << v.x << ", " << v.y << ")";
+    return os;
+  }
 
   friend bool operator==(const float2 &L, const float2 &R) {
-    return std::tie(L.x, L.y) == std::tie(R.x, R.y);
+    //  return std::tie(L.x, L.y) == std::tie(R.x, R.y);
+    return ((std::abs(L.x - R.x) < EPSILON) && (std::abs(L.y - R.y) < EPSILON));
   }
 
   float2 &operator-=(const float2 &v) {
@@ -59,7 +63,7 @@ struct Node {
   Node(const float2 &d, int idx) : pos(d), id(idx){};
 
   float2 pos; // node's position
-  int id;      // nodes id = used as index later
+  int id;     // nodes id = used as index later
 };
 
 class QuadEdge;

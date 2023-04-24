@@ -8,18 +8,25 @@
 #include "include/delaunay.h"
 #include "include/viewer.h"
 
+// 1130932488
 namespace ch = std::chrono;
 
 #define NOW() ch::steady_clock::now()
 
-#define WINDOW_WIDTH 1900
-#define WINDOW_HEIGHT 1000
+#define WINDOW_WIDTH 10
+#define WINDOW_HEIGHT 10
+
+const float WIDTH_OFFSET = 0 / 2;
+const float HEIGHT_OFFSET = 0 / 2;
+// const float WIDTH_OFFSET = WINDOW_WIDTH / 2;
+// const float HEIGHT_OFFSET = WINDOW_HEIGHT / 2;
 
 const int FRAME_RATE = 5;
 const int FRAME_DELAY = 1000 / FRAME_RATE;
 
-std::vector<float2> const generateRandomPoints(int num_points, int radius_x,
-                                                int radius_y, float2 offset) {
+const int NUMBER_STARS = 50000;
+std::vector<float2> const generateRandomPoints(int num_points, float radius_x,
+                                               float radius_y, float2 offset) {
   std::vector<float2> points;
   points.reserve(num_points);
 
@@ -27,15 +34,16 @@ std::vector<float2> const generateRandomPoints(int num_points, int radius_x,
 
   auto rndd = rd();
   std::cout << "rndd: " << rndd << std::endl;
-  std::mt19937 gen(rndd);
-  // std::mt19937 gen(2731319382); // BUG CHECK!
-  // std::mt19937 gen(2201349777); // bug?
+  //  std::mt19937 gen(rndd);
+  std::mt19937 gen(3719001485);
+  //  std::mt19937 gen(2731319382); // BUG CHECK!
+  // std::mt19937 gen(1130932488); // bug?
   //  rndd: 3369158952
   std::uniform_real_distribution<float> dis_x(-radius_x, radius_x);
   std::uniform_real_distribution<float> dis_y(-radius_y, radius_y);
 
   for (size_t i = 0; i < num_points; ++i) {
-    int2 const pos(int(dis_x(gen)) + offset.x, int(dis_y(gen)) + offset.y);
+    float2 const pos((dis_x(gen)) + offset.x, (dis_y(gen)) + offset.y);
     points.emplace_back(pos);
   }
 
@@ -94,9 +102,9 @@ int main() {
       DivideConquer DC;
 
       /********************* Generate Input ********************/
-      std::vector<float2> const rng =
-          generateRandomPoints(50000, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
-                               float2(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2));
+      std::vector<float2> const rng = generateRandomPoints(
+          NUMBER_STARS, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
+          float2(WIDTH_OFFSET, HEIGHT_OFFSET));
 
       /******************  Delaunay   *************/
       // Compute Divide&Conquer and compute triangulation

@@ -30,24 +30,27 @@ void Edge::setEndPoints(const Node &ori, const Node &dest) {
 
 int insideCircle(const float2 &p, const float2 &a, const float2 &b,
                  const float2 &c) {
+
+  if ((a == p) || (b == p) || (c == p)) {
+    return false;
+  }
+
   return (a.x * a.x + a.y * a.y) * computeArea(b, c, p) -
              (b.x * b.x + b.y * b.y) * computeArea(a, c, p) +
              (c.x * c.x + c.y * c.y) * computeArea(a, b, p) -
              (p.x * p.x + p.y * p.y) * computeArea(a, b, c) >
-         0;
+         0.0;
 }
 
 int ccw(const float2 &a, const float2 &b, const float2 &c) {
-  return (computeArea(a, b, c) > 0);
+  return (computeArea(a, b, c) > 0.0);
 }
 
 int rightOf(const float2 &p, Edge *e) {
   return ccw(p, e->Dest2d(), e->Org2d());
 }
 
-int leftOf(const float2 &p, Edge *e) {
-  return ccw(p, e->Org2d(), e->Dest2d());
-}
+int leftOf(const float2 &p, Edge *e) { return ccw(p, e->Org2d(), e->Dest2d()); }
 
 bool isValid(Edge *e, Edge *basel) { return rightOf(e->Dest2d(), basel); }
 
@@ -249,9 +252,9 @@ void DivideConquer::computeTriangulation(
   // Sort points front left-to-right, then down-up only if X==Y
   std::sort(temp_stars_system.begin(), temp_stars_system.end(),
             [](const float2 &a, const float2 &b) {
-              if (a.x == b.x)
-                return (a.y < b.y); // down to up
-              return a.x < b.x;     // left to right
+              if (std::abs(a.x - b.x) < EPSILON) // same x
+                return (a.y < b.y);              // down to up
+              return a.x < b.x;                  // left to right
             });
 
   m_ordered_points.reserve(temp_stars_system.size());
