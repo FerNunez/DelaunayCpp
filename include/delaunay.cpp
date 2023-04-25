@@ -28,8 +28,8 @@ void Edge::setEndPoints(const Node &ori, const Node &dest) {
 
 /*********************** Basic Topological Operators ************************/
 
-int insideCircle(const float2 &p, const float2 &a, const float2 &b,
-                 const float2 &c) {
+bool insideCircle(const float2 &p, const float2 &a, const float2 &b,
+                  const float2 &c) {
 
   if ((a == p) || (b == p) || (c == p)) {
     return false;
@@ -42,15 +42,17 @@ int insideCircle(const float2 &p, const float2 &a, const float2 &b,
          0.0;
 }
 
-int ccw(const float2 &a, const float2 &b, const float2 &c) {
+bool ccw(const float2 &a, const float2 &b, const float2 &c) {
   return (computeArea(a, b, c) > 0.0);
 }
 
-int rightOf(const float2 &p, Edge *e) {
+bool rightOf(const float2 &p, Edge *e) {
   return ccw(p, e->Dest2d(), e->Org2d());
 }
 
-int leftOf(const float2 &p, Edge *e) { return ccw(p, e->Org2d(), e->Dest2d()); }
+bool leftOf(const float2 &p, Edge *e) {
+  return ccw(p, e->Org2d(), e->Dest2d());
+}
 
 bool isValid(Edge *e, Edge *basel) { return rightOf(e->Dest2d(), basel); }
 
@@ -260,12 +262,12 @@ void DivideConquer::computeTriangulation(
   m_ordered_points.reserve(temp_stars_system.size());
   // remove repeated:
   // worst: all equals? -> O(n), all diff -> O(2*n) = O(n)
-  for (int i(0); i < temp_stars_system.size(); i++) {
+  for (size_t i(0); i < temp_stars_system.size(); i++) {
 
     const float2 &p = temp_stars_system[i];
     m_ordered_points.push_back(p);
 
-    for (int j(i + 1); j < temp_stars_system.size(); j++) {
+    for (size_t j(i + 1); j < temp_stars_system.size(); j++) {
       const float2 &q = temp_stars_system[j];
       // not same
       if (fabsf(q.x - p.x) != 0 || fabsf(q.y - p.y) != 0) {
@@ -323,7 +325,7 @@ float DivideConquer::computeKruskalMinD(std::vector<Edge *> &a_solution) {
   // loop all edges
   int node_orig_set = -1;
   int node_dest_set = -1;
-  for (int i = 0; i < valid_edges.size(); i++) {
+  for (size_t i = 0; i < valid_edges.size(); i++) {
 
     // find id of node's set/cluster
     node_orig_set = findCluster(valid_edges[i]->Org().id, cluster_id);
@@ -342,7 +344,7 @@ float DivideConquer::computeKruskalMinD(std::vector<Edge *> &a_solution) {
       }
 
       // already connected all edges between nodes
-      if (a_solution.size() == m_num_nodes - 1) {
+      if (static_cast<int>(a_solution.size()) == m_num_nodes - 1) {
         break;
       }
     }

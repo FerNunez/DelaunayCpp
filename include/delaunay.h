@@ -191,17 +191,17 @@ inline float computeArea(const float2 &a, const float2 &b, const float2 &c) {
   return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 // Return true if point P inside triangle abc
-int insideCircle(const float2 &p, const float2 &a, const float2 &b,
-                 const float2 &c);
+bool insideCircle(const float2 &p, const float2 &a, const float2 &b,
+                  const float2 &c);
 
 // Returns true if the points a, b, c are in a counterclockwise order
-int ccw(const float2 &a, const float2 &b, const float2 &c);
+bool ccw(const float2 &a, const float2 &b, const float2 &c);
 
 // True if p is right of edge e
-int rightOf(const float2 &p, Edge *e);
+bool rightOf(const float2 &p, Edge *e);
 
 // True if p is left of edge e
-int leftOf(const float2 &p, Edge *e);
+bool leftOf(const float2 &p, Edge *e);
 
 // Checks whether the edge e is above basel
 bool isValid(Edge *e, Edge *basel);
