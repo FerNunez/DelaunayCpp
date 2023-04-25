@@ -21,12 +21,10 @@ const float HEIGHT_OFFSET = 0 / 2;
 // const float WIDTH_OFFSET = WINDOW_WIDTH / 2;
 // const float HEIGHT_OFFSET = WINDOW_HEIGHT / 2;
 
-const int FRAME_RATE = 5;
-const int FRAME_DELAY = 1000 / FRAME_RATE;
-
 const int NUMBER_STARS = 50000;
-std::vector<float2> const generateRandomPoints(int num_points, float radius_x,
-                                               float radius_y, float2 offset) {
+std::vector<float2> const generateRandomPoints(size_t num_points,
+                                               float radius_x, float radius_y,
+                                               float2 offset) {
   std::vector<float2> points;
   points.reserve(num_points);
 
@@ -60,7 +58,6 @@ int main() {
   bool update = true;
   bool draw = true;
   while (!quit) {
-    auto start_time_point = NOW();
 
     // get events
     SDL_Event event;

@@ -1,7 +1,7 @@
 #include "delaunay.h"
 
 /************ Data Structure *************/
-QuadEdge::QuadEdge() : alive(true), lenght(0.0) {
+QuadEdge::QuadEdge() : lenght(0.0), alive(true) {
 
   // Set index
   e[0].index = 0; // Normal edge
